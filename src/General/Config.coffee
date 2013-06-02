@@ -76,7 +76,7 @@ Config =
     'Fit height':       [false, '']
     'Expand spoilers':  [false, 'Expand all images along with spoilers.']
     'Expand from here': [true,  'Expand all images only from current position to thread end.']
-  ThreadWatcher:
+  threadWatcher:
     'Current Board':    [false, 'Only show watched threads from the current board.']
     'Auto Watch':       [true,  'Automatically watch threads you start.']
     'Auto Watch Reply': [false, 'Automatically watch threads you reply to.']

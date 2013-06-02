@@ -83,13 +83,13 @@ a[href="javascript:;"] {
 #qr {
   z-index: 30;
 }
-#watcher:hover {
+#thread-watcher:hover {
   z-index: 20;
 }
 #header {
   z-index: 10;
 }
-#watcher {
+#thread-watcher {
   z-index: 5;
 }
 
@@ -431,19 +431,19 @@ a.hide-announcement {
 }
 
 /* Thread Watcher */
-#watcher {
+#thread-watcher {
   max-width: 200px;
   min-width: 150px;
   padding: 3px;
   position: absolute;
 }
-#watcher > div:first-child {
+#thread-watcher > div:first-child {
   display: -webkit-flex;
   display: flex;
   -webkit-align-items: center;
   align-items: center;
 }
-#watcher .move {
+#thread-watcher .move {
   -webkit-flex: 1;
   flex: 1;
 }
@@ -461,6 +461,9 @@ a.hide-announcement {
 }
 #watched-threads a {
   text-decoration: none;
+}
+#watched-threads .dead-thread a[title] {
+  text-decoration: line-through;
 }
 
 /* Thread Stats */

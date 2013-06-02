@@ -13,6 +13,8 @@ class DataBoard
       @sync = sync
     $.on d, '4chanXInitFinished', init
 
+  save: ->
+    $.set @key, @data
   delete: ({boardID, threadID, postID}) ->
     if postID
       delete @data.boards[boardID][threadID][postID]
@@ -22,7 +24,7 @@ class DataBoard
       @deleteIfEmpty {boardID}
     else
       delete @data.boards[boardID]
-    $.set @key, @data
+    @save()
   deleteIfEmpty: ({boardID, threadID}) ->
     if threadID
       unless Object.keys(@data.boards[boardID][threadID]).length
@@ -37,7 +39,7 @@ class DataBoard
       (@data.boards[boardID] or= {})[threadID] = val
     else
       @data.boards[boardID] = val
-    $.set @key, @data
+    @save()
   get: ({boardID, threadID, postID, defaultValue}) ->
     if board = @data.boards[boardID]
       unless threadID
@@ -76,7 +78,7 @@ class DataBoard
       for boardID of @data.boards
         @ajaxClean boardID
 
-    $.set @key, @data
+    @save()
   ajaxClean: (boardID) ->
     $.cache "//api.4chan.org/#{boardID}/threads.json", (e) =>
       if e.target.status is 404
@@ -91,7 +93,7 @@ class DataBoard
               threads[thread.no] = board[thread.no]
         @data.boards[boardID] = threads
         @deleteIfEmpty {boardID}
-      $.set @key, @data
+      @save()
 
   onSync: (data) ->
     @data = data or boards: {}
