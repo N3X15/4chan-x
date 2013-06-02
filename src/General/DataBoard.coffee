@@ -1,10 +1,10 @@
-DataBoards = ['hiddenThreads', 'hiddenPosts', 'lastReadPosts', 'yourPosts']
+DataBoards = ['hiddenThreads', 'hiddenPosts', 'lastReadPosts', 'yourPosts', 'watchedThreads']
 
 class DataBoard
-  constructor: (@key, sync) ->
+  constructor: (@key, sync, dontClean) ->
     @data = Conf[key]
     $.sync key, @onSync.bind @
-    @clean()
+    @clean() unless dontClean
     return unless sync
     # Chrome also fires the onChanged callback on the current tab,
     # so we only start syncing when we're ready.

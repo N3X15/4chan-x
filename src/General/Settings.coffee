@@ -170,7 +170,6 @@ Settings =
       data =
         version: g.VERSION
         date: now
-      Conf['WatchedThreads'] = {}
       for db in DataBoards
         Conf[db] = boards: {}
       # Make sure to export the most recent data.
@@ -281,7 +280,10 @@ Settings =
         continue unless key of data.Conf
         data.Conf[key] = data.Conf[key].replace(/ctrl|alt|meta/g, (s) -> "#{s[0].toUpperCase()}#{s[1..]}").replace /(^|.+\+)[A-Z]$/g, (s) ->
           "Shift+#{s[0...-1]}#{s[-1..].toLowerCase()}"
-      data.Conf.WatchedThreads = data.WatchedThreads
+      data.Conf['WatchedThreads'] = data.WatchedThreads
+    if data.Conf['WatchedThreads']
+      data.Conf['watchedThreads'] = boards: ThreadWatcher.convert data.Conf['WatchedThreads']
+      delete data.Conf['WatchedThreads']
     $.set data.Conf
   convertSettings: (data, map) ->
     for prevKey, newKey of map

@@ -1,3 +1,9 @@
+- **Thread Watcher rewrite**:
+ - It is now possible to open all watched threads via the `Open all threads` button in the Thread Watcher's menu.
+ - Added the `Current Board` setting to switch between showing watched threads from the current board or all boards, disabled by default.
+ - The current thread is now highlighted in the list of watched threads.
+ - Watching the current thread can be done in the Header's menu too.
+
 ### 3.5.2 - *2013-06-01*
 
 - Fix minor regression.
