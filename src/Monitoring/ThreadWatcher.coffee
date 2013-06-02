@@ -49,7 +49,9 @@ ThreadWatcher =
       el: $.el 'a',
         textContent: 'Open all threads'
         href: 'javascript:;'
-      open: -> !!ThreadWatcher.list.firstElementChild
+      open: ->
+        (if ThreadWatcher.list.firstElementChild then $.rmClass else $.addClass) @el, 'disabled'
+        true
     $.event 'AddMenuEntry', entry
     $.on entry.el, 'click', ThreadWatcher.cb.openAll
 
@@ -59,7 +61,9 @@ ThreadWatcher =
       el: $.el 'a',
         textContent: 'Prune 404\'d threads'
         href: 'javascript:;'
-      open: -> !!$ '.dead-thread', ThreadWatcher.list
+      open: ->
+        (if $('.dead-thread', ThreadWatcher.list) then $.rmClass else $.addClass) @el, 'disabled'
+        true
     $.event 'AddMenuEntry', entry
     $.on entry.el, 'click', ThreadWatcher.cb.pruneDeads
 
@@ -102,10 +106,12 @@ ThreadWatcher =
     menuToggle: (e) ->
       ThreadWatcher.menu.toggle e, @, ThreadWatcher
     openAll: ->
+      return if $.hasClass @, 'disabled'
       for a in $$ 'a[title]', ThreadWatcher.list
         $.open a.href
       $.event 'CloseMenu'
     pruneDeads: ->
+      return if $.hasClass @, 'disabled'
       for boardID, threads of ThreadWatcher.db.data.boards
         if Conf['Current Board'] and boardID isnt g.BOARD.ID
           continue
