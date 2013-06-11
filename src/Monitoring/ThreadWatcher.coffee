@@ -141,28 +141,31 @@ ThreadWatcher =
       return unless ThreadWatcher.db.get {boardID: thread.board.ID, threadID: thread.ID}
       ThreadWatcher.add thread
 
+  makeLine: (boardID, threadID, data) ->
+    x = $.el 'a',
+      textContent: '×'
+      href: 'javascript:;'
+    $.on x, 'click', ThreadWatcher.cb.rm
+
+    if data.isDead
+      href = Redirect.to 'thread', {boardID, threadID}
+    link = $.el 'a',
+      href: href or "/#{boardID}/res/#{threadID}"
+      textContent: data.excerpt
+      title: data.excerpt
+
+    div = $.el 'div'
+    div.setAttribute 'data-fullid', "#{boardID}.#{threadID}"
+    $.addClass div, 'dead-thread' if data.isDead
+    $.add div, [x, $.tn(' '), link]
+    div
   refresh: ->
     nodes = []
     for boardID, threads of ThreadWatcher.db.data.boards
       if Conf['Current Board'] and boardID isnt g.BOARD.ID
         continue
       for threadID, data of threads
-        x = $.el 'a',
-          textContent: '×'
-          href: 'javascript:;'
-        $.on x, 'click', ThreadWatcher.cb.rm
-
-        if data.isDead
-          href = Redirect.to 'thread', {boardID, threadID}
-        link = $.el 'a',
-          href: href or "/#{boardID}/res/#{threadID}"
-          textContent: data.excerpt
-          title: data.excerpt
-
-        nodes.push div = $.el 'div'
-        div.setAttribute 'data-fullid', "#{boardID}.#{threadID}"
-        $.addClass div, 'dead-thread' if data.isDead
-        $.add div, [x, $.tn(' '), link]
+        nodes.push ThreadWatcher.makeLine boardID, threadID, data
 
     list = ThreadWatcher.dialog.lastElementChild
     $.rmAll list
