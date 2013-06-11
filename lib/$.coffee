@@ -263,9 +263,11 @@ $.get = (key, val, cb) ->
     else
       (syncItems  or= {})[key] = val
 
-  items = {}
   count = 0
   done  = (item) ->
+    {lastError} = chrome.runtime
+    if lastError
+      c.error lastError, lastError.message or 'No message.'
     $.extend items, item
     cb items unless --count
 
