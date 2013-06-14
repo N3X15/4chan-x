@@ -8,6 +8,14 @@
  - The current thread is now highlighted in the list of watched threads.
  - Watching the current thread can be done in the Header's menu too.
 
+### 3.5.4 - *2013-06-11*
+
+- Fix regression.
+
+### 3.5.3 - *2013-06-11*
+
+- Minor fixes.
+
 ### 3.5.2 - *2013-06-01*
 
 - Fix minor regression.
