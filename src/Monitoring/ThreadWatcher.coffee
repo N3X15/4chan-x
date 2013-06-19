@@ -202,13 +202,16 @@ ThreadWatcher =
     else
       ThreadWatcher.add thread
   add: (thread) ->
-    data = excerpt: Get.threadExcerpt thread
+    data     = {}
+    boardID  = thread.board.ID
+    threadID = thread.ID
     if thread.isDead
+      if Conf['Auto Prune'] and ThreadWatcher.db.get {boardID, threadID}
+        ThreadWatcher.rm boardID, threadID
+        return
       data.isDead = true
-    ThreadWatcher.db.set
-      boardID:  thread.board.ID
-      threadID: thread.ID
-      val: data
+    data.excerpt  = Get.threadExcerpt thread
+    ThreadWatcher.db.set {boardID, threadID, val: data}
     ThreadWatcher.refresh()
   rm: (boardID, threadID) ->
     ThreadWatcher.db.delete {boardID, threadID}
