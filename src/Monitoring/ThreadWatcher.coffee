@@ -112,12 +112,9 @@ ThreadWatcher =
       $.event 'CloseMenu'
     pruneDeads: ->
       return if $.hasClass @, 'disabled'
-      for boardID, threads of ThreadWatcher.db.data.boards
-        if Conf['Current Board'] and boardID isnt g.BOARD.ID
-          continue
-        for threadID, data of threads
-          continue unless data.isDead
-          delete threads[threadID]
+      for {boardID, threadID, data} in ThreadWatcher.getAll()
+        continue unless data.isDead
+        delete ThreadWatcher.db.data.boards[boardID][threadID]
         ThreadWatcher.db.deleteIfEmpty {boardID}
       ThreadWatcher.db.save()
       ThreadWatcher.refresh()
@@ -141,6 +138,15 @@ ThreadWatcher =
       return unless ThreadWatcher.db.get {boardID: thread.board.ID, threadID: thread.ID}
       ThreadWatcher.add thread
 
+  getAll: ->
+    all = []
+    for boardID, threads of ThreadWatcher.db.data.boards
+      if Conf['Current Board'] and boardID isnt g.BOARD.ID
+        continue
+      for threadID, data of threads
+        all.push {boardID, threadID, data}
+    all
+
   makeLine: (boardID, threadID, data) ->
     x = $.el 'a',
       textContent: '×'
@@ -161,11 +167,8 @@ ThreadWatcher =
     div
   refresh: ->
     nodes = []
-    for boardID, threads of ThreadWatcher.db.data.boards
-      if Conf['Current Board'] and boardID isnt g.BOARD.ID
-        continue
-      for threadID, data of threads
-        nodes.push ThreadWatcher.makeLine boardID, threadID, data
+    for {boardID, threadID, data} in ThreadWatcher.getAll()
+      nodes.push ThreadWatcher.makeLine boardID, threadID, data
 
     list = ThreadWatcher.dialog.lastElementChild
     $.rmAll list
