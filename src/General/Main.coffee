@@ -35,7 +35,7 @@ Main =
     $.on d, '4chanMainInit', Main.initStyle
     # <title> comes after the stylesheets on the index/thread pages, but before on the catalog.
     # <link favicon> comes after the stylesheets on the catalog, but before on the index/thread pages.
-    $.asap (-> d.head and $('title', d.head) and $('link[rel="shortcut icon"]', d.head) or d.readyState isnt 'loading'
+    $.asap (-> d.head and $('title', d.head) and $('link[rel="shortcut icon"]', d.head) or d.readyState isnt 'loading'),
       Main.initStyle
 
   initFeatures: (items) ->
@@ -181,20 +181,18 @@ Main =
       threads = []
       posts   = []
 
-      for boardChild in board.children
-        continue unless $.hasClass boardChild, 'thread'
-        thread = new Thread boardChild.id[1..], g.BOARD
+      for threadRoot in $$ '.board > .thread', board
+        thread = new Thread +threadRoot.id[1..], g.BOARD
         threads.push thread
-        for threadChild in boardChild.children
-          continue unless $.hasClass threadChild, 'postContainer'
+        for postRoot in $$ '.thread > .postContainer', threadRoot
           try
-            posts.push new Post threadChild, thread, g.BOARD
+            posts.push new Post postRoot, thread, g.BOARD
           catch err
             # Skip posts that we failed to parse.
             unless errors
               errors = []
             errors.push
-              message: "Parsing of Post No.#{threadChild.id.match(/\d+/)} failed. Post will be skipped."
+              message: "Parsing of Post No.#{postRoot.id.match(/\d+/)} failed. Post will be skipped."
               error: err
       Main.handleErrors errors if errors
 
@@ -279,8 +277,29 @@ Main =
           $.set 'lastupdate', now
           return
         $.set 'lastchecked', now
+        # dmichnowicz
+        # 19 juin 2013 09:39:28
+        # innerHTML is not allowed in conjunction with external resources: [...]
+        #
+        # mayhemydg
+        # 19 juin 2013 09:43:14
+        # Will it be good if I make sure to match a version number?
+        #
+        # dmichnowicz
+        # 19 juin 2013 09:46:12
+        # Yes.
+        #
+        # mayhemydg
+        # 19 juin 2013 13:04:30
+        # Well actually there is nothing to fix, the following code makes sure this is a
+        # valid version number and precedes the innerHTML part: [see /^\d\.\d+\.\d+$/.test]
+        #
+        # dmichnowicz
+        # 21 juin 2013 04:52:37
+        # OK but anyway please remove that line of code.
         el = $.el 'span',
-          innerHTML: "Update: <%= meta.name %> v#{version} is out, get it <a href=<%= meta.page %> target=_blank>here</a>."
+          textContent: "Update: <%= meta.name %> v#{version} is out, get it "
+        el.innerHTML += '<a href=<%= meta.page %> target=_blank>here</a>.'
         new Notification 'info', el, 120
 
   handleErrors: (errors) ->
@@ -324,7 +343,17 @@ Main =
 
   postErrors: ->
     return if Main.v2Detected
-    errors = Main.errors.map (d) -> d.message + ' ' + d.error.stack
+    errors = Main.errors.map (d) ->
+      {stack} = d.error
+      <% if (type === 'userscript') { %>
+      # Before:
+      # someFn@file:///C:/Users/<USER>/AppData/Roaming/Mozilla/Firefox/Profiles/<garbage>.default/gm_scripts/4chan_X/4chan-X.user.js:line_number
+      # someFn@file:///home/<USER>/.mozilla/firefox/<garbage>.default/gm_scripts/4chan_X/4chan-X.user.js:line_number
+      # After:
+      # someFn@4chan-X.user.js:line_number
+      stack.replace /file:\/{3}.+\//g, '' if stack
+      <% } %>
+      "#{d.message} #{stack}"
     $.ajax '<%= meta.page %>errors', {},
       sync: true
       form: $.formData
