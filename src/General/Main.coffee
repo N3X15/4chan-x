@@ -127,8 +127,6 @@ Main =
     <% if (type === 'crx') { %>
     $.addClass doc, 'webkit'
     $.addClass doc, 'blink'
-    <% } else if (type === 'userjs') { %>
-    $.addClass doc, 'presto'
     <% } else { %>
     $.addClass doc, 'gecko'
     <% } %>
@@ -151,13 +149,9 @@ Main =
       $.addClass doc, style
     setStyle()
     return unless mainStyleSheet
-    if window.MutationObserver
-      observer = new MutationObserver setStyle
-      observer.observe mainStyleSheet,
-        attributes: true
-        attributeFilter: ['href']
-    else
-      $.on mainStyleSheet, 'DOMAttrModified', setStyle
+    new MutationObserver(setStyle).observe mainStyleSheet,
+      attributes: true
+      attributeFilter: ['href']
 
   initReady: ->
     if d.title is '4chan - 404 Not Found'
@@ -252,12 +246,10 @@ Main =
 
   checkUpdate: ->
     return unless Conf['Check for Updates'] and Main.isThisPageLegit()
-    # Check for updates after:
-    #  - 6 hours since the last update on Opera because it lacks auto-updating.
-    #  - 7 days since the last update on Chrome/Firefox.
+    # Check for updates after 7 days since the last update.
     # After that, check for updates every day if we still haven't updated.
     now  = Date.now()
-    freq = <% if (type === 'userjs') { %>6 * $.HOUR<% } else { %>7 * $.DAY<% } %>
+    freq = 7 * $.DAY
     items =
       lastupdate:  0
       lastchecked: 0
@@ -339,7 +331,7 @@ Main =
 
   postErrors: ->
     return if Main.v2Detected
-    errors = Main.errors.map (d) ->
+    errors = Main.errors.filter((d) -> !!d.error.stack).map((d) ->
       {stack} = d.error
       <% if (type === 'userscript') { %>
       # Before:
@@ -350,6 +342,8 @@ Main =
       stack = stack.replace /file:\/{3}.+\//g, '' if stack
       <% } %>
       "#{d.message} #{stack}"
+    ).join '\n'
+    return unless errors
     $.ajax '<%= meta.page %>errors', {},
       sync: true
       form: $.formData
@@ -357,7 +351,7 @@ Main =
         t: '<%= type %>'
         ua:  window.navigator.userAgent
         url: window.location.href
-        e: errors.join '\n'
+        e: errors
 
   isThisPageLegit: ->
     # 404 error page or similar.
