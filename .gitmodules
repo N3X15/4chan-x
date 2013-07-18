@@ -1,0 +1,3 @@
+[submodule "lib/base64.coffee"]
+	path = lib/base64.coffee
+	url = https://github.com/rwz/base64.coffee.git
