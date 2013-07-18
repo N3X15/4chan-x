@@ -15,7 +15,7 @@ Sauce =
       name: 'Sauce'
       cb:   @node
   createSauceLink: (link) ->
-    link = link.replace /%(T?URL|MD5|board)/g, (parameter) ->
+    link = link.replace /%(T?URL|MD5|board|DMD5)/g, (parameter) ->
       switch parameter
         when '%TURL'
           "' + encodeURIComponent(post.file.thumbURL) + '"

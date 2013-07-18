@@ -275,6 +275,8 @@ Settings =
             '%MD5'
           when '$4'
             '%board'
+          when '$5'
+            '%DMD5'
           else
             c
       for key, val of Config.hotkeys
