@@ -21,7 +21,7 @@ Sauce =
           "' + encodeURIComponent(post.file.thumbURL) + '"
         when '%URL'
           "' + encodeURIComponent(post.file.URL) + '"
-        when '%MD5D'
+        when '%DMD5'
           "' + encodeURIComponent(Base64.decode(post.file.MD5).split ('').map (function (c) { return c.charCodeAt(0).toString(16); }).join('')) + '"
         when '%MD5'
           "' + encodeURIComponent(post.file.MD5) + '"
