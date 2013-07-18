@@ -1,3 +1,7 @@
+### 3.5.8 - *2013-07-17*
+- N3X15: Added %DMD5 to Sauce, for people who want a decoded MD5.
+
+## OLD STUFF
 ### 3.5.7 - *2013-07-13*
 
 - Drop Opera <15 support.
