@@ -14,7 +14,8 @@ Filter =
       console.debug(link)
       $.ajax link.trim(),
         type: 'GET'
-        dataType: "json"
+        headers:
+          Accept: 'application/json'
         onload: (data) ->
           if @status isnt 200
             new Notification 'warning', "Received HTTP #{@status} from #{link.trim()}!", 60
