@@ -1,5 +1,6 @@
 Filter =
   filters: {}
+  http: require('http')
   init: ->
     return if g.VIEW is 'catalog' or !Conf['Filter']
     
@@ -12,13 +13,15 @@ Filter =
     for link in Conf['subscriptions'].split '\n'
       continue if link[0] is '#'
       console.debug(link)
-      $.ajax link.trim(),
-        async: false
-        onload: ->
+      @http.get link.trim(), (res) ->
+        data = ''
+        res.on 'data', (chunk) ->
+          data += chunk.toString()
+        res.on 'end', () ->
           if @status isnt 200
             new Notification 'warning', "Received HTTP #{@status} from #{link.trim()}!", 60
             return
-          obj = JSON.parse @response
+          obj = JSON.parse data
           console.debug(obj)
           if Object.keys(obj).length is 0
             new Notification 'warning', "Received an object with 0 keys. #{obj}", 60
