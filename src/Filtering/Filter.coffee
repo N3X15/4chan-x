@@ -15,6 +15,7 @@ Filter =
       options =
         headers:
           'Accept': 'application/json,text/html'
+          'Referer':''
       callback = onload: (data)->
         console.debug data
         if data.statusCode isnt 200
