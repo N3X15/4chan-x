@@ -6,6 +6,9 @@ Filter =
     # Preclean
     for key of Config.filter
       @filters[key] = []
+      for filter in Conf[key].split '\n'
+        continue if filter[0] is '#'
+        @loadFilterFrom key, filter.trim()
     
     # Load subscriptions
     #console.debug(Conf['subscriptions'])
@@ -38,12 +41,6 @@ Filter =
               new Notification 'warning', err.message, 60
               return
       $.ajax link.trim(), callback, options
-    
-    for key of Config.filter
-      #@filters[key] = []
-      for filter in Conf[key].split '\n'
-        continue if filter[0] is '#'
-        @loadFilterFrom key, filter.trim()
 
       # Only execute filter types that contain valid filters.
       unless @filters[key].length
