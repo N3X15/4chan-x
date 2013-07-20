@@ -30,7 +30,7 @@ Filter =
         for context of Config.filter
           if context not of obj
             new Notification 'warning', "Whoever wrote #{link} didn't include key #{context}.", 60
-			continue
+            continue
           for line in obj[context]
             try
               lolme.loadFilterFrom context, line
