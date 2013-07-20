@@ -1,9 +1,9 @@
 {
-  "name": "4chan-X",
-  "version": "3.5.7",
+  "name": "4chan-X-Plus",
+  "version": "3.5.9",
   "description": "Cross-browser extension for productive lurking on 4chan.",
   "meta": {
-    "name": "4chan X",
+    "name": "4chan X Plus",
     "repo": "https://github.com/N3X15/4chan-x/",
     "page": "https://4chan-x.just-believe.in/",
     "buildsPath": "builds/",
@@ -29,11 +29,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/MayhemYDG/4chan-x.git"
+    "url": "git://github.com/N3X15/4chan-x.git"
   },
   "author": "Nicolas Stepien <stepien.nicolas@gmail.com>",
   "contributors": [
-    "James Campos <james.r.campos@gmail.com>"
+    "James Campos <james.r.campos@gmail.com>",
+    "Rob Nelson <nexis@7chan.org>"
   ],
   "license": "MIT",
   "readmeFilename": "README.md",

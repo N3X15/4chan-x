@@ -15,7 +15,7 @@ Filter =
         onload: ->
           return unless @status is 200
           obj = JSON.parse @response
-          continue unless Object.keys(obj).length
+          return unless Object.keys(obj).length
           for context in obj
             for line in obj[context]
               try

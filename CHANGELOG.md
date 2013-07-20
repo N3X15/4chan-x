@@ -1,3 +1,6 @@
+### 3.5.9 - *2013-07-19*
+- N3X15: Added filter subscriptions.
+
 ### 3.5.8 - *2013-07-17*
 - N3X15: Added %DMD5 to Sauce, for people who want a decoded MD5.
 
