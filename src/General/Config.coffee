@@ -136,7 +136,7 @@ Config =
     # Subscribe to a filterset!
     #
     #KSP Dev Tripcodes
-    http://dedi.nexisonline.net/filters/kspg_tripcodes.json
+    http://dedi.nexisonline.net/filters/kspg_tripcodes.php?fmt=json
     #KSPG Filters
     #http://dedi.nexisonline.net/filters/kspg_filters.json
   """
