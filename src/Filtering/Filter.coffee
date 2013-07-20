@@ -11,8 +11,8 @@ Filter =
     for link in Conf['subscriptions'].split '\n'
       obj = @getJSONFrom link.trim() if link[0] isnt '#'
       continue unless Object.keys(obj).length
-      for context in obj:
-        for line in obj[context]:
+      for context in obj
+        for line in obj[context]
           try
             @loadFilterFrom context line
           catch err
