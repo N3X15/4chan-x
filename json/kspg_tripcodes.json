@@ -1,0 +1,19 @@
+// Official Squad 4chan Tripcode List
+{
+	name: []
+	uniqueID: []
+	tripcode: [
+		'/!!0j+5YQHQ/2I/;highlight:squad'               // Artyom      developer
+		'/^!QeYBaiERz2!!59jUKo4uJL7$/;highlight:squad', // Rob Nelson  intern
+		'/^!!O1zlP6nj1Ko$/;highlight:squad'             // Max         PR
+	]
+	capcode: []
+	email: []
+	subject: []
+	comment: []
+	flag: []
+	filename: []
+	dimensions: []
+	filesize: []
+	MD5: []
+}

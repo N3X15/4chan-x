@@ -45,6 +45,7 @@ Settings =
     Settings.addSection 'Filter',   Settings.filter
     Settings.addSection 'QR',       Settings.qr
     Settings.addSection 'Sauce',    Settings.sauce
+    Settings.addSection 'Subscriptions',    Settings.subscriptions
     Settings.addSection 'Rice',     Settings.rice
     Settings.addSection 'Archives', Settings.archives
     Settings.addSection 'Keybinds', Settings.keybinds
@@ -331,6 +332,15 @@ Settings =
     ta = $ 'textarea', section
     $.get 'sauces', Conf['sauces'], (item) ->
       ta.value = item['sauces']
+    $.on ta, 'change', $.cb.value
+
+  subscriptions: (section) ->
+    section.innerHTML = """
+    <%= grunt.file.read('html/General/Settings-section-Subscriptions.html').replace(/>\s+</g, '><').trim() %>
+    """
+    ta = $ 'textarea', section
+    $.get 'subscriptions', Conf['subscriptions'], (item) ->
+      ta.value = item['subscriptions']
     $.on ta, 'change', $.cb.value
 
   rice: (section) ->

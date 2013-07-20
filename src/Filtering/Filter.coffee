@@ -2,62 +2,28 @@ Filter =
   filters: {}
   init: ->
     return if g.VIEW is 'catalog' or !Conf['Filter']
-
+    
+    # Preclean
     for key of Config.filter
       @filters[key] = []
+    
+    # Load subscriptions
+    for link in Conf['subscriptions'].split '\n'
+      obj = @getJSONFrom link.trim() if link[0] isnt '#'
+      continue unless Object.keys(obj).length
+      for context in obj:
+        for line in obj[context]:
+          try
+            @loadFilterFrom context line
+          catch err
+            # Don't add random text plz.
+    
+    for key of Config.filter
+      #@filters[key] = []
       for filter in Conf[key].split '\n'
         continue if filter[0] is '#'
-
-        unless regexp = filter.match /\/(.+)\/(\w*)/
-          continue
-
-        # Don't mix up filter flags with the regular expression.
-        filter = filter.replace regexp[0], ''
-
-        # Do not add this filter to the list if it's not a global one
-        # and it's not specifically applicable to the current board.
-        # Defaults to global.
-        boards = filter.match(/boards:([^;]+)/)?[1].toLowerCase() or 'global'
-        if boards isnt 'global' and not (g.BOARD.ID in boards.split ',')
-          continue
-
-        if key in ['uniqueID', 'MD5']
-          # MD5 filter will use strings instead of regular expressions.
-          regexp = regexp[1]
-        else
-          try
-            # Please, don't write silly regular expressions.
-            regexp = RegExp regexp[1], regexp[2]
-          catch err
-            # I warned you, bro.
-            new Notification 'warning', err.message, 60
-            continue
-
-        # Filter OPs along with their threads, replies only, or both.
-        # Defaults to both.
-        op = filter.match(/[^t]op:(yes|no|only)/)?[1] or 'yes'
-
-        # Overrule the `Show Stubs` setting.
-        # Defaults to stub showing.
-        stub = switch filter.match(/stub:(yes|no)/)?[1]
-          when 'yes'
-            true
-          when 'no'
-            false
-          else
-            Conf['Stubs']
-
-        # Highlight the post, or hide it.
-        # If not specified, the highlight class will be filter-highlight.
-        # Defaults to post hiding.
-        if hl = /highlight/.test filter
-          hl  = filter.match(/highlight:(\w+)/)?[1] or 'filter-highlight'
-          # Put highlighted OP's thread on top of the board page or not.
-          # Defaults to on top.
-          top = filter.match(/top:(yes|no)/)?[1] or 'yes'
-          top = top is 'yes' # Turn it into a boolean
-
-        @filters[key].push @createFilter regexp, op, stub, hl, top
+        
+        @loadFilterFrom key filter.trim()
 
       # Only execute filter types that contain valid filters.
       unless @filters[key].length
@@ -67,6 +33,58 @@ Filter =
     Post::callbacks.push
       name: 'Filter'
       cb:   @node
+      
+  loadFilterFrom: (key, filter) ->
+    unless regexp = filter.match /\/(.+)\/(\w*)/
+      continue
+
+    # Don't mix up filter flags with the regular expression.
+    filter = filter.replace regexp[0], ''
+
+    # Do not add this filter to the list if it's not a global one
+    # and it's not specifically applicable to the current board.
+    # Defaults to global.
+    boards = filter.match(/boards:([^;]+)/)?[1].toLowerCase() or 'global'
+    if boards isnt 'global' and not (g.BOARD.ID in boards.split ',')
+      continue
+
+    if key in ['uniqueID', 'MD5']
+      # MD5 filter will use strings instead of regular expressions.
+      regexp = regexp[1]
+    else
+      try
+        # Please, don't write silly regular expressions.
+        regexp = RegExp regexp[1], regexp[2]
+      catch err
+        # I warned you, bro.
+        new Notification 'warning', err.message, 60
+        continue
+
+    # Filter OPs along with their threads, replies only, or both.
+    # Defaults to both.
+    op = filter.match(/[^t]op:(yes|no|only)/)?[1] or 'yes'
+
+    # Overrule the `Show Stubs` setting.
+    # Defaults to stub showing.
+    stub = switch filter.match(/stub:(yes|no)/)?[1]
+      when 'yes'
+        true
+      when 'no'
+        false
+      else
+        Conf['Stubs']
+
+    # Highlight the post, or hide it.
+    # If not specified, the highlight class will be filter-highlight.
+    # Defaults to post hiding.
+    if hl = /highlight/.test filter
+      hl  = filter.match(/highlight:(\w+)/)?[1] or 'filter-highlight'
+      # Put highlighted OP's thread on top of the board page or not.
+      # Defaults to on top.
+      top = filter.match(/top:(yes|no)/)?[1] or 'yes'
+      top = top is 'yes' # Turn it into a boolean
+
+    @filters[key].push @createFilter regexp, op, stub, hl, top
 
   createFilter: (regexp, op, stub, hl, top) ->
     test =

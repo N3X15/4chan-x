@@ -132,6 +132,14 @@ Config =
     #//archive.foolz.us/%board/search/image/%MD5/;text:View same on foolz /%board/
     #//archive.installgentoo.net/%board/image/%MD5;text:View same on installgentoo /%board/
   """
+  subscriptions: """
+    # Subscribe to a filterset!
+    #
+    #KSP Dev Tripcodes
+    http://dedi.nexisonline.net/filters/kspg_tripcodes.json
+    #KSPG Filters
+    #http://dedi.nexisonline.net/filters/kspg_filters.json
+  """
   'Custom CSS': false
   Header:
     'Header auto-hide':        false
