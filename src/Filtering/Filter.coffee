@@ -13,7 +13,9 @@ Filter =
       $.ajax link.trim(),
         async: false
         onload: ->
-          return unless @status is 200
+          if @status isnt 200
+            new Notification 'warning', "Received HTTP #{@status} from #{link.trim()}!", 60
+            return
           obj = JSON.parse @response
           return unless Object.keys(obj).length
           for context in obj
@@ -21,7 +23,8 @@ Filter =
               try
                 @loadFilterFrom context, line
               catch err
-                # Don't add random text plz.
+                new Notification 'warning', err.message, 60
+                return
     
     for key of Config.filter
       #@filters[key] = []
