@@ -12,8 +12,8 @@ Filter =
     for link in Conf['subscriptions'].split '\n'
       continue if link[0] is '#'
       #console.debug(link)
-      options = @urlp.parse link.trim()
-      options.headers['Accept']= 'application/json,text/html'
+      options =
+        'Accept': 'application/json,text/html'
       $.get link.trim(), options, (data)->
         console.debug data
         if data.statusCode isnt 200
