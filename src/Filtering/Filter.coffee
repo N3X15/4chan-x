@@ -11,28 +11,30 @@ Filter =
         @loadFilterFrom key, filter.trim()
     
     # Load subscriptions
-    #console.debug(Conf['subscriptions'])
+    #TODO: Find way to associate the URL being retrieved with the callback.
     for link in Conf['subscriptions'].split '\n'
       continue if link[0] is '#'
-      #console.debug(link)
       options =
         headers:
-          'Accept': 'application/json,text/html'
-          'Referer':''
+          # Maybe Accept: *
+          'Accept': 'application/json'
+          'Referer': ''
+      # Because @ is reassigned within the callback and I am uncreative as fuck.
       lolme=@
       callback = onload: (data)->
-        console.debug @
         if @status isnt 200
-          new Notification 'warning', "Received HTTP #{@status} from #{link.trim()}!", 60
+          new Notification 'warning', "Received HTTP #{@status} from #{@url}!", 60
+          return
+        if @response == ""
+          new Notification 'warning', "Received empty response from #{@url}! (Need Access-Control-Allow-Origin: *)", 60
           return
         obj = JSON.parse @response
-        console.debug(obj)
         if Object.keys(obj).length is 0
           new Notification 'warning', "Received an object with 0 keys. #{obj}", 60
           return
         for context of Config.filter
           if context not of obj
-            new Notification 'warning', "Whoever wrote #{link} didn't include key #{context}.", 60
+            new Notification 'warning', "Whoever wrote #{@url} didn't include key #{context}.", 60
             continue
           for line in obj[context]
             try
@@ -40,6 +42,7 @@ Filter =
             catch err
               new Notification 'warning', err.message, 60
               return
+      
       $.ajax link.trim(), callback, options
 
       # Only execute filter types that contain valid filters.
@@ -52,13 +55,6 @@ Filter =
       cb:   @node
     
   loadFilterFrom: (key, filter) ->
-    #Deal with stupid people trying to use inexistent keys.
-    if key not of @filters
-      #new Notification 'warning', "Some moron just tried loadFilterFrom #{key}.", 60
-      console.debug(@filters)
-      console.debug(Config.filter)
-      #return
-    
     unless regexp = filter.match /\/(.+)\/(\w*)/
       return
 
