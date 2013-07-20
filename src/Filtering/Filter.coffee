@@ -58,8 +58,8 @@ Filter =
     if key not in @filters
       new Notification 'warning', "Some moron just tried loadFilterFrom #{key}.", 60
       console.debug(@filters)
-	  console.debug(Config.filter)
-	  return
+      console.debug(Config.filter)
+      return
     
     unless regexp = filter.match /\/(.+)\/(\w*)/
       return
