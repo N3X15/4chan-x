@@ -9,7 +9,7 @@ Filter =
     
     # Load subscriptions
     for link in Conf['subscriptions'].split '\n'
-      continue unless link[0] isnt '#'
+      continue if link[0] is '#'
       $.ajax link.trim(),
         async: false
         onload: ->
