@@ -18,7 +18,7 @@ Filter =
           'Referer':''
       lolme=@
       callback = onload: (data)->
-        #console.debug data
+        console.debug @
         if @status isnt 200
           new Notification 'warning', "Received HTTP #{@status} from #{link.trim()}!", 60
           return
@@ -55,8 +55,11 @@ Filter =
     
   loadFilterFrom: (key, filter) ->
     #Deal with stupid people trying to use inexistent keys.
-    if key not in Config.filter
+    if key not in @filters
       new Notification 'warning', "Some moron just tried loadFilterFrom #{key}.", 60
+      console.debug(@filters)
+	  console.debug(Config.filter)
+	  return
     
     unless regexp = filter.match /\/(.+)\/(\w*)/
       return
