@@ -9,14 +9,19 @@ Filter =
     
     # Load subscriptions
     for link in Conf['subscriptions'].split '\n'
-      obj = @getJSONFrom link.trim() if link[0] isnt '#'
-      continue unless Object.keys(obj).length
-      for context in obj
-        for line in obj[context]
-          try
-            @loadFilterFrom context line
-          catch err
-            # Don't add random text plz.
+      continue unless link[0] isnt '#'
+      $.ajax link.trim(),
+        async: false
+        onload: ->
+          return unless @status is 200
+          obj = JSON.parse @response
+          continue unless Object.keys(obj).length
+          for context in obj
+            for line in obj[context]
+              try
+                @loadFilterFrom context line
+              catch err
+                # Don't add random text plz.
     
     for key of Config.filter
       #@filters[key] = []
@@ -33,7 +38,8 @@ Filter =
     Post::callbacks.push
       name: 'Filter'
       cb:   @node
-      
+  getJSONFrom: (uri) ->
+    
   loadFilterFrom: (key, filter) ->
     unless regexp = filter.match /\/(.+)\/(\w*)/
       return
