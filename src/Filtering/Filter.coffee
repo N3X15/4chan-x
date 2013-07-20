@@ -1,5 +1,7 @@
 Filter =
   filters: {}
+  urlp: require 'url'
+  http: require 'http'
   init: ->
     return if g.VIEW is 'catalog' or !Conf['Filter']
     
@@ -8,19 +10,18 @@ Filter =
       @filters[key] = []
     
     # Load subscriptions
-    console.debug(Conf['subscriptions'])
+    #console.debug(Conf['subscriptions'])
     for link in Conf['subscriptions'].split '\n'
       continue if link[0] is '#'
-      console.debug(link)
-      options =
-        type: 'GET'
-        headers:
-          'Accept': 'application/json,text/html'
-      $.ajax link.trim(), options, ->
-        if @status isnt 200
+      #console.debug(link)
+      options = @urlp.parse link.trim()
+      options.headers['Accept']= 'application/json,text/html'
+      @http.get link.trim(), options, (data)->
+        console.debug data
+        if data.statusCode isnt 200
           new Notification 'warning', "Received HTTP #{@status} from #{link.trim()}!", 60
           return
-        obj = JSON.parse @response
+        obj = JSON.parse data.body
         console.debug(obj)
         if Object.keys(obj).length is 0
           new Notification 'warning', "Received an object with 0 keys. #{obj}", 60
