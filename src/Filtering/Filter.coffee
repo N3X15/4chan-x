@@ -18,10 +18,10 @@ Filter =
           'Referer':''
       callback = onload: (data)->
         console.debug data
-        if data.statusCode isnt 200
+        if @status isnt 200
           new Notification 'warning', "Received HTTP #{@status} from #{link.trim()}!", 60
           return
-        obj = JSON.parse data.body
+        obj = JSON.parse @response
         console.debug(obj)
         if Object.keys(obj).length is 0
           new Notification 'warning', "Received an object with 0 keys. #{obj}", 60
