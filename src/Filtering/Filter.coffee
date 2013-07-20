@@ -12,26 +12,26 @@ Filter =
     for link in Conf['subscriptions'].split '\n'
       continue if link[0] is '#'
       console.debug(link)
-      $.ajax link.trim(),
+      options =
         type: 'GET'
         headers:
-          'Accept': 'application/json'
-        onload: ->
-          if @status isnt 200
-            new Notification 'warning', "Received HTTP #{@status} from #{link.trim()}!", 60
-            return
-          obj = JSON.parse @response
-          console.debug(obj)
-          if Object.keys(obj).length is 0
-            new Notification 'warning', "Received an object with 0 keys. #{obj}", 60
-            return
-          for context of obj
-            for line in obj[context]
-              try
-                @loadFilterFrom context, line
-              catch err
-                new Notification 'warning', err.message, 60
-                return
+          'Accept': 'application/json,text/html'
+      $.ajax link.trim(), options, ->
+        if @status isnt 200
+          new Notification 'warning', "Received HTTP #{@status} from #{link.trim()}!", 60
+          return
+        obj = JSON.parse @response
+        console.debug(obj)
+        if Object.keys(obj).length is 0
+          new Notification 'warning', "Received an object with 0 keys. #{obj}", 60
+          return
+        for context of obj
+          for line in obj[context]
+            try
+              @loadFilterFrom context, line
+            catch err
+              new Notification 'warning', err.message, 60
+              return
     
     for key of Config.filter
       #@filters[key] = []
