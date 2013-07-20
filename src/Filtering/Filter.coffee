@@ -36,7 +36,7 @@ Filter =
       
   loadFilterFrom: (key, filter) ->
     unless regexp = filter.match /\/(.+)\/(\w*)/
-      continue
+      return
 
     # Don't mix up filter flags with the regular expression.
     filter = filter.replace regexp[0], ''
@@ -46,7 +46,7 @@ Filter =
     # Defaults to global.
     boards = filter.match(/boards:([^;]+)/)?[1].toLowerCase() or 'global'
     if boards isnt 'global' and not (g.BOARD.ID in boards.split ',')
-      continue
+      return
 
     if key in ['uniqueID', 'MD5']
       # MD5 filter will use strings instead of regular expressions.
@@ -58,7 +58,7 @@ Filter =
       catch err
         # I warned you, bro.
         new Notification 'warning', err.message, 60
-        continue
+        return
 
     # Filter OPs along with their threads, replies only, or both.
     # Defaults to both.
