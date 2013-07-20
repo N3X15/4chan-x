@@ -15,7 +15,7 @@ Filter =
       options =
         headers:
           'Accept': 'application/json,text/html'
-      callback = (data)->
+      callback = onload: (data)->
         console.debug data
         if data.statusCode isnt 200
           new Notification 'warning', "Received HTTP #{@status} from #{link.trim()}!", 60
