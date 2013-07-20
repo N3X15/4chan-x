@@ -1,7 +1,5 @@
 Filter =
   filters: {}
-  urlp: require 'url'
-  http: require 'http'
   init: ->
     return if g.VIEW is 'catalog' or !Conf['Filter']
     
@@ -16,7 +14,7 @@ Filter =
       #console.debug(link)
       options = @urlp.parse link.trim()
       options.headers['Accept']= 'application/json,text/html'
-      @http.get link.trim(), options, (data)->
+      $.get link.trim(), options, (data)->
         console.debug data
         if data.statusCode isnt 200
           new Notification 'warning', "Received HTTP #{@status} from #{link.trim()}!", 60
