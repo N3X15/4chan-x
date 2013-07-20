@@ -57,10 +57,10 @@ Filter =
   loadFilterFrom: (key, filter) ->
     #Deal with stupid people trying to use inexistent keys.
     if key not of @filters
-      new Notification 'warning', "Some moron just tried loadFilterFrom #{key}.", 60
+      #new Notification 'warning', "Some moron just tried loadFilterFrom #{key}.", 60
       console.debug(@filters)
       console.debug(Config.filter)
-      return
+      #return
     
     unless regexp = filter.match /\/(.+)\/(\w*)/
       return
