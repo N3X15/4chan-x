@@ -13,8 +13,9 @@ Filter =
       continue if link[0] is '#'
       #console.debug(link)
       options =
-        'Accept': 'application/json,text/html'
-      $.get link.trim(), options, (data)->
+        headers:
+          'Accept': 'application/json,text/html'
+      callback = (data)->
         console.debug data
         if data.statusCode isnt 200
           new Notification 'warning', "Received HTTP #{@status} from #{link.trim()}!", 60
@@ -31,6 +32,7 @@ Filter =
             catch err
               new Notification 'warning', err.message, 60
               return
+      $.ajax link.trim(), callback, options
     
     for key of Config.filter
       #@filters[key] = []
