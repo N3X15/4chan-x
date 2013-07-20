@@ -8,8 +8,10 @@ Filter =
       @filters[key] = []
     
     # Load subscriptions
+    console.debug(Conf['subscriptions'])
     for link in Conf['subscriptions'].split '\n'
       continue if link[0] is '#'
+      console.debug(link)
       $.ajax link.trim(),
         async: false
         onload: ->
