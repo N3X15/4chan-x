@@ -20,7 +20,7 @@ Filter =
           if Object.keys(obj).length is 0
             new Notification 'warning', "Received an object with 0 keys. #{obj}", 60
             return
-          for context in obj
+          for context of obj
             for line in obj[context]
               try
                 @loadFilterFrom context, line
