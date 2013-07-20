@@ -16,8 +16,9 @@ Filter =
         headers:
           'Accept': 'application/json,text/html'
           'Referer':''
+      lolme=@
       callback = onload: (data)->
-        console.debug data
+        #console.debug data
         if @status isnt 200
           new Notification 'warning', "Received HTTP #{@status} from #{link.trim()}!", 60
           return
@@ -29,7 +30,7 @@ Filter =
         for context of obj
           for line in obj[context]
             try
-              @loadFilterFrom context, line
+              lolme.loadFilterFrom context, line
             catch err
               new Notification 'warning', err.message, 60
               return
