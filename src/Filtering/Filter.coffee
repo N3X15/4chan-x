@@ -17,6 +17,7 @@ Filter =
             new Notification 'warning', "Received HTTP #{@status} from #{link.trim()}!", 60
             return
           obj = JSON.parse @response
+          console.debug(obj)
           if Object.keys(obj).length is 0
             new Notification 'warning', "Received an object with 0 keys. #{obj}", 60
             return
