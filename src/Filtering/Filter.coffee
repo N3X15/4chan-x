@@ -19,7 +19,7 @@ Filter =
           for context in obj
             for line in obj[context]
               try
-                @loadFilterFrom context line
+                @loadFilterFrom context, line
               catch err
                 # Don't add random text plz.
     
@@ -27,8 +27,7 @@ Filter =
       #@filters[key] = []
       for filter in Conf[key].split '\n'
         continue if filter[0] is '#'
-        
-        @loadFilterFrom key filter.trim()
+        @loadFilterFrom key, filter.trim()
 
       # Only execute filter types that contain valid filters.
       unless @filters[key].length
@@ -38,7 +37,6 @@ Filter =
     Post::callbacks.push
       name: 'Filter'
       cb:   @node
-  getJSONFrom: (uri) ->
     
   loadFilterFrom: (key, filter) ->
     unless regexp = filter.match /\/(.+)\/(\w*)/
