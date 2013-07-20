@@ -28,8 +28,9 @@ Filter =
           new Notification 'warning', "Received an object with 0 keys. #{obj}", 60
           return
         for context of Config.filter
-          if context not in obj
+          if context not of obj
             new Notification 'warning', "Whoever wrote #{link} didn't include key #{context}.", 60
+			continue
           for line in obj[context]
             try
               lolme.loadFilterFrom context, line
@@ -55,7 +56,7 @@ Filter =
     
   loadFilterFrom: (key, filter) ->
     #Deal with stupid people trying to use inexistent keys.
-    if key not in @filters
+    if key not of @filters
       new Notification 'warning', "Some moron just tried loadFilterFrom #{key}.", 60
       console.debug(@filters)
       console.debug(Config.filter)
