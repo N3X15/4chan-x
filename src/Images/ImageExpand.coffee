@@ -8,7 +8,7 @@ ImageExpand =
       title: 'Expand All Images'
       href: 'javascript:;'
     $.on @EAI, 'click', ImageExpand.cb.toggleAll
-    Header.addShortcut @EAI
+    Header.addShortcut @EAI, 2
 
     Post::callbacks.push
       name: 'Image Expansion'
@@ -59,17 +59,18 @@ ImageExpand =
       ImageExpand.expand post
       return
     ImageExpand.contract post
-    rect = post.nodes.root.getBoundingClientRect()
-    return unless rect.top <= 0 or rect.left <= 0
+
     # Scroll back to the thumbnail when contracting the image
     # to avoid being left miles away from the relevant post.
-    {top} = rect
-    unless Conf['Bottom header']
-      headRect = Header.toggle.getBoundingClientRect()
-      top += - headRect.top - headRect.height
-    root = <% if (type === 'crx') { %>d.body<% } else { %>doc<% } %>
-    root.scrollTop += top if rect.top  < 0
-    root.scrollLeft = 0   if rect.left < 0
+    rect = post.nodes.root.getBoundingClientRect()
+    if rect.top < 0
+      y = rect.top
+      unless Conf['Bottom header']
+        headRect = Header.toggle.getBoundingClientRect()
+        y -= headRect.top + headRect.height
+    if rect.left < 0
+      x = -window.scrollX
+    window.scrollBy x, y if x or y
 
   contract: (post) ->
     $.rmClass post.nodes.root, 'expanded-image'
@@ -109,9 +110,8 @@ ImageExpand =
       $.addClass post.nodes.root, 'expanded-image'
       $.rmClass  post.file.thumb, 'expanding'
       return unless prev.top + prev.height <= 0
-      root = <% if (type === 'crx') { %>d.body<% } else { %>doc<% } %>
       curr = post.nodes.root.getBoundingClientRect()
-      root.scrollTop += curr.height - prev.height + curr.top - prev.top
+      window.scrollBy 0, curr.height - prev.height + curr.top - prev.top
 
   error: ->
     post = Get.postFromNode @
@@ -159,8 +159,8 @@ ImageExpand =
 
       {createSubEntry} = ImageExpand.menu
       subEntries = []
-      for key, conf of Config.imageExpansion
-        subEntries.push createSubEntry key, conf
+      for name, conf of Config.imageExpansion
+        subEntries.push createSubEntry name, conf[1]
 
       $.event 'AddMenuEntry',
         type: 'header'
@@ -168,15 +168,14 @@ ImageExpand =
         order: 80
         subEntries: subEntries
 
-    createSubEntry: (type, config) ->
+    createSubEntry: (name, desc) ->
       label = $.el 'label',
-        innerHTML: "<input type=checkbox name='#{type}'> #{type}"
+        innerHTML: "<input type=checkbox name='#{name}'> #{name}"
+        title: desc
       input = label.firstElementChild
-      if type in ['Fit width', 'Fit height']
+      if name in ['Fit width', 'Fit height']
         $.on input, 'change', ImageExpand.cb.setFitness
-      if config
-        label.title   = config[1]
-        input.checked = Conf[type]
-        $.event 'change', null, input
-        $.on input, 'change', $.cb.checked
+      input.checked = Conf[name]
+      $.event 'change', null, input
+      $.on input, 'change', $.cb.checked
       el: label

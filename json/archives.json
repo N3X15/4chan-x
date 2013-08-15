@@ -5,7 +5,7 @@
   "http": true,
   "https": true,
   "software": "foolfuuka",
-  "boards": ["a", "co", "gd", "jp", "m", "q", "sp", "tg", "tv", "vg", "vp", "vr", "wsg"],
+  "boards": ["a", "co", "gd", "jp", "m", "q", "sp", "tg", "tv", "v", "vg", "vp", "vr", "wsg"],
   "files": ["a", "gd", "jp", "m", "q", "tg", "vg", "vp", "vr", "wsg"]
 }, {
   "uid": 1,
@@ -50,8 +50,17 @@
   "http": true,
   "https": true,
   "software": "foolfuuka",
-  "boards": ["adv", "asp", "cm", "e", "i", "lgbt", "n", "o", "p", "pol", "s", "s4s", "t", "trv", "y"],
-  "files": ["adv", "asp", "cm", "e", "i", "lgbt", "n", "o", "p", "s", "s4s", "t", "trv", "y"]
+  "boards": ["adv", "asp", "cm", "d", "e", "i", "lgbt", "n", "o", "p", "pol", "s", "s4s", "t", "trv", "y"],
+  "files": ["cm", "d", "e", "i", "n", "o", "p", "s", "trv", "y"]
+}, {
+  "uid": 12,
+  "name": "fap archive",
+  "domain": "fuuka.worldathleticproject.org",
+  "http": true,
+  "https": false,
+  "software": "foolfuuka",
+  "boards": ["b", "e", "h", "hc", "p", "s", "u"],
+  "files": ["b", "e", "h", "hc", "p", "s", "u"]
 }, {
   "uid": 7,
   "name": "Install Gentoo",
@@ -88,4 +97,14 @@
   "software": "fuuka",
   "boards": ["3", "cgl", "ck", "fa", "ic", "jp", "lit", "q", "tg", "vr"],
   "files": ["3", "cgl", "ck", "fa", "ic", "jp", "lit", "q", "tg", "vr"]
+}, {
+  "uid": 13,
+  "name": "Foolz Beta",
+  "domain": "beta.foolz.us",
+  "http": true,
+  "https": true,
+  "withCredentials": true,
+  "software": "foolfuuka",
+  "boards": ["a", "co", "d", "gd", "h", "jp", "m", "mlp", "q", "sp", "tg", "tv", "u", "v", "vg", "vp", "vr", "wsg"],
+  "files": ["a", "d", "gd", "h", "jp", "m", "q", "tg", "u", "vg", "vp", "vr", "wsg"]
 }]

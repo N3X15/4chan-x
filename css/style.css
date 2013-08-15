@@ -36,7 +36,7 @@
 .move {
   cursor: move;
 }
-label, .favicon {
+label, .watcher-toggler {
   cursor: pointer;
 }
 a[href="javascript:;"] {
@@ -83,13 +83,13 @@ a[href="javascript:;"] {
 #qr {
   z-index: 30;
 }
-#watcher:hover {
+#thread-watcher:hover {
   z-index: 20;
 }
 #header {
   z-index: 10;
 }
-#watcher {
+#thread-watcher {
   z-index: 5;
 }
 
@@ -138,6 +138,8 @@ a[href="javascript:;"] {
 #board-list {
   -webkit-flex: 1;
   flex: 1;
+  -webkit-align-self: center;
+  align-self: center;
   text-align: center;
 }
 #header-bar.autohide:not(:hover) {
@@ -188,9 +190,6 @@ a[href="javascript:;"] {
 #header-bar a:not(.entry) {
   text-decoration: none;
   padding: 1px;
-}
-#shortcuts:empty {
-  display: none;
 }
 .shortcut:not(:last-child)::after {
   content: " / ";
@@ -432,27 +431,45 @@ a.hide-announcement {
 }
 
 /* Thread Watcher */
-#watcher {
-  padding-bottom: 3px;
+#thread-watcher {
+  max-width: 200px;
+  min-width: 150px;
+  padding: 3px;
   position: absolute;
+}
+#thread-watcher > div:first-child {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+}
+#thread-watcher .move {
+  -webkit-flex: 1;
+  flex: 1;
+}
+#watcher-status:not(:empty)::before {
+  content: "(";
+}
+#watcher-status:not(:empty)::after {
+  content: ")";
+}
+#watched-threads:not(:hover) {
+  max-height: 150px;
   overflow: hidden;
+}
+#watched-threads div {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
-#watcher:not(:hover) {
-  max-height: 220px;
+#watched-threads .current {
+  font-weight: 700;
 }
-#watcher > .move {
-  padding-top: 3px;
-}
-#watcher > div {
-  max-width: 200px;
-  overflow: hidden;
-  padding-left: 3px;
-  padding-right: 3px;
-  text-overflow: ellipsis;
-}
-#watcher a {
+#watched-threads a {
   text-decoration: none;
+}
+#watched-threads .dead-thread a[title] {
+  text-decoration: line-through;
 }
 
 /* Thread Stats */
@@ -797,54 +814,73 @@ a.hide-announcement {
   height: 57px;
   width: 300px;
 }
-#file-n-submit > input {
-  margin: 0;
-}
-#file-n-submit.has-file #qr-no-file {
-  visibility: hidden;
-}
-#file-n-submit:not(.has-file) #qr-filename,
-#file-n-submit:not(.has-file) #qr-file-spoiler,
-#file-n-submit:not(.has-file) #qr-filerm {
-  display: none;
+#file-n-submit-container {
+  position: relative;
 }
 #file-n-submit {
-  display: -webkit-flex;
-  display: flex;
-  -webkit-flex-direction: row;
-  flex-direction: row;
-  -webkit-align-items: center;
-  align-items: center;
-}
-#qr-no-file, #qr-filename-container {
-  -webkit-flex: 1;
-  flex: 1;
-}
-#qr-filename-container {
-  cursor: default;
-  position: relative;
-  margin-left: 2px;
-}
-#qr-filename {
   position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
   left: 0;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
 }
-#qr-filerm {
-  padding: 0 2px;
+#file-n-submit-container input[type='file'] {
+  /* Keep it to set an appropriate height to the container. */
+  visibility: hidden;
 }
-#file-n-submit > #qr-file-spoiler {
-  margin: 0 2px;
+#file-n-submit-container input {
+  margin: 0;
+  padding: 0;
 }
 #file-n-submit input[type='submit'] {
-  min-width: 40px;
   -webkit-order: 1;
   order: 1;
+}
+#file-n-submit.has-file #qr-no-file,
+#file-n-submit:not(.has-file) #qr-filename,
+#file-n-submit:not(.has-file) #qr-filesize,
+#file-n-submit:not(.has-file) #qr-file-spoiler,
+#file-n-submit:not(.has-file) #qr-filerm,
+#qr-filename:focus ~ #qr-filesize {
+  display: none;
+}
+#qr-no-file,
+#qr-filename,
+#qr-filesize,
+#qr-filerm,
+#qr-file-spoiler {
+  margin: 0 2px !important;
+}
+#qr-no-file {
+  cursor: default;
+  -webkit-flex: 1;
+  flex: 1;
+}
+#qr-filename {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: none;
+  border: none !important;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  -webkit-flex: 1;
+  flex: 1;
+  text-overflow: ellipsis;
+}
+#qr-filesize {
+  font-size: .8em;
+}
+#qr-filesize::before {
+  content: " (";
+}
+#qr-filesize::after {
+  content: ")";
 }
 
 /* Menu */
@@ -870,6 +906,18 @@ a.hide-announcement {
   position: absolute;
   outline: none;
 }
+#menu.top {
+  top: 100%;
+}
+#menu.bottom {
+  bottom: 100%;
+}
+#menu.left {
+  left: 0;
+}
+#menu.right {
+  right: 0;
+}
 .entry {
   cursor: pointer;
   outline: none;
@@ -877,6 +925,9 @@ a.hide-announcement {
   position: relative;
   text-decoration: none;
   white-space: nowrap;
+}
+.entry.disabled {
+  color: graytext !important;
 }
 .entry.has-submenu {
   padding-right: 20px;
@@ -902,6 +953,18 @@ a.hide-announcement {
   flex-direction: column;
   position: absolute;
   margin: -1px 0;
+}
+.submenu.top {
+  top: 0;
+}
+.submenu.bottom {
+  bottom: 0;
+}
+.submenu.left {
+  left: 100%;
+}
+.submenu.right {
+  right: 100%;
 }
 .entry input {
   margin: 0;

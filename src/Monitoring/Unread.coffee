@@ -125,13 +125,13 @@ Unread =
       break if bottom > height # post is not completely read
     return unless i
 
-    Unread.lastReadPost = Unread.posts[i - 1].ID
+    Unread.lastReadPost = Unread.posts.splice(0, i)[i - 1].ID
     Unread.saveLastReadPost()
-    Unread.posts.splice 0, i
     Unread.readArray Unread.postsQuotingYou
     Unread.update() if e
 
   saveLastReadPost: ->
+    return if Unread.thread.isDead
     Unread.db.set
       boardID:  Unread.thread.board.ID
       threadID: Unread.thread.ID

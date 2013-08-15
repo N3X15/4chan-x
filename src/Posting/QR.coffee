@@ -27,7 +27,7 @@ QR =
       $.event 'CloseMenu'
       QR.open()
       QR.nodes.com.focus()
-    Header.addShortcut sc
+    Header.addShortcut sc, 1
 
     $.on d, 'QRGetSelectedPost', ({detail: cb}) ->
       cb QR.selected
@@ -74,14 +74,21 @@ QR =
     QR.cleanNotifications()
     d.activeElement.blur()
     $.rmClass QR.nodes.el, 'dump'
-    for i in QR.posts
-      QR.posts[0].rm()
+    new QR.post true
+    for post in QR.posts.splice 0, QR.posts.length - 1
+      post.delete()
     QR.cooldown.auto = false
     QR.status()
   focusin: ->
     $.addClass QR.nodes.el, 'has-focus'
   focusout: ->
+    <% if (type === 'crx') { %>
     $.rmClass QR.nodes.el, 'has-focus'
+    <% } else { %>
+    $.queueTask ->
+      return if $.x 'ancestor::div[@id="qr"]', d.activeElement
+      $.rmClass QR.nodes.el, 'has-focus'
+    <% } %>
   hide: ->
     d.activeElement.blur()
     $.addClass QR.nodes.el, 'autohide'
@@ -115,7 +122,8 @@ QR =
 
   status: ->
     return unless QR.nodes
-    if g.DEAD
+    {thread} = QR.posts[0]
+    if thread isnt 'new' and g.threads["#{g.BOARD}.#{thread}"].isDead
       value    = 404
       disabled = true
       QR.cooldown.auto = false
@@ -174,9 +182,7 @@ QR =
         types[type].push val
     loadPersonas: (type, arr) ->
       list = $ "#list-#{type}", QR.nodes.el
-      for val in arr
-        # XXX Firefox displays empty <option>s in the completion list.
-        continue unless val
+      for val in arr when val
         $.add list, $.el 'option',
           textContent: val
       return
@@ -340,7 +346,7 @@ QR =
       $.addClass QR.nodes.el, 'dump'
       QR.cooldown.auto = true
     {com, thread} = QR.nodes
-    thread.value = Get.contextFromNode(@).thread unless com.value
+    thread.value = Get.threadFromNode @ unless com.value
 
     caretPos = com.selectionStart
     # Replace selection for text.
@@ -389,7 +395,7 @@ QR =
   openFileInput: ->
     QR.nodes.fileInput.click()
   fileInput: (files) ->
-    if @ instanceof Element #or files instanceof Event # file input
+    if files instanceof Event # file input
       files = [@files...]
       QR.nodes.fileInput.value = null # Don't hold the files from being modified on windows
     {length} = files
@@ -446,7 +452,7 @@ QR =
         $.on elm, 'blur',  QR.focusout
         $.on elm, 'focus', QR.focusin
       <% } %>
-      $.on el,             'click',  @select.bind @
+      $.on el,             'click',  @select
       $.on @nodes.rm,      'click',  (e) => e.stopPropagation(); @rm()
       $.on @nodes.label,   'click',  (e) => e.stopPropagation()
       $.on @nodes.spoiler, 'change', (e) =>
@@ -493,27 +499,30 @@ QR =
       @select() if select
       @unlock()
     rm: ->
-      $.rm @nodes.el
+      @delete()
       index = QR.posts.indexOf @
       if QR.posts.length is 1
         new QR.post true
       else if @ is QR.selected
         (QR.posts[index-1] or QR.posts[index+1]).select()
       QR.posts.splice index, 1
+      QR.status()
+    delete: ->
+      $.rm @nodes.el
       URL.revokeObjectURL @URL
     lock: (lock=true) ->
       @isLocked = lock
       return unless @ is QR.selected
-      for name in ['thread', 'name', 'email', 'sub', 'com', 'fileButton', 'spoiler']
+      for name in ['thread', 'name', 'email', 'sub', 'com', 'fileButton', 'filename', 'spoiler']
         QR.nodes[name].disabled = lock
       @nodes.rm.style.visibility =
         QR.nodes.fileRM.style.visibility = if lock then 'hidden' else ''
-      (if lock then $.off else $.on) QR.nodes.filename.parentNode, 'click', QR.openFileInput
+      (if lock then $.off else $.on) QR.nodes.filename.previousElementSibling, 'click', QR.openFileInput
       @nodes.spoiler.disabled = lock
       @nodes.el.draggable = !lock
     unlock: ->
       @lock false
-    select: ->
+    select: =>
       if QR.selected
         QR.selected.nodes.el.id = null
         QR.selected.forceSave()
@@ -528,7 +537,7 @@ QR =
       $.event 'QRPostSelection', @
     load: ->
       # Load this post's values.
-      for name in ['thread', 'name', 'email', 'sub', 'com']
+      for name in ['thread', 'name', 'email', 'sub', 'com', 'filename']
         QR.nodes[name].value = @[name] or null
       @showFileData()
       QR.characterCount()
@@ -536,25 +545,37 @@ QR =
       if input.type is 'checkbox'
         @spoiler = input.checked
         return
-      {value} = input
-      @[input.dataset.name] = value
-      return if input.nodeName isnt 'TEXTAREA'
-      @nodes.span.textContent = value
-      QR.characterCount()
-      # Disable auto-posting if you're typing in the first post
-      # during the last 5 seconds of the cooldown.
-      if QR.cooldown.auto and @ is QR.posts[0] and 0 < QR.cooldown.seconds <= 5
-        QR.cooldown.auto = false
+      {name}  = input.dataset
+      @[name] = input.value
+      switch name
+        when 'thread'
+          QR.status()
+        when 'com'
+          @nodes.span.textContent = @com
+          QR.characterCount()
+          # Disable auto-posting if you're typing in the first post
+          # during the last 5 seconds of the cooldown.
+          if QR.cooldown.auto and @ is QR.posts[0] and 0 < QR.cooldown.seconds <= 5
+            QR.cooldown.auto = false
+        when 'filename'
+          return unless @file
+          @file.newName = @filename.replace /[/\\]/g, '-'
+          unless /\.(jpe?g|png|gif|pdf|sfw)$/i.test @filename
+            # 4chan will truncate the filename if it has no extension,
+            # but it will always replace the extension by the correct one,
+            # so we suffix it with '.jpg' when needed.
+            @file.newName += '.jpg'
+          @updateFilename()
     forceSave: ->
       return unless @ is QR.selected
       # Do this in case people use extensions
       # that do not trigger the `input` event.
-      for name in ['thread', 'name', 'email', 'sub', 'com', 'spoiler']
+      for name in ['thread', 'name', 'email', 'sub', 'com', 'filename', 'spoiler']
         @save QR.nodes[name]
       return
     setFile: (@file) ->
-      @filename           = "#{file.name} (#{$.bytesToString file.size})"
-      @nodes.el.title     = @filename
+      @filename = file.name
+      @filesize = $.bytesToString file.size
       @nodes.label.hidden = false if QR.spoiler
       URL.revokeObjectURL @URL
       @showFileData()
@@ -589,36 +610,31 @@ QR =
         cv.width  = img.width  = width
         cv.getContext('2d').drawImage img, 0, 0, width, height
         URL.revokeObjectURL fileURL
-        applyBlob = (blob) =>
+        cv.toBlob (blob) =>
           @URL = URL.createObjectURL blob
           @nodes.el.style.backgroundImage = "url(#{@URL})"
-        if cv.toBlob
-          cv.toBlob applyBlob
-          return
-        data = atob cv.toDataURL().split(',')[1]
-
-        # DataUrl to Binary code from Aeosynth's 4chan X repo
-        l = data.length
-        ui8a = new Uint8Array l
-        for i in  [0...l]
-          ui8a[i] = data.charCodeAt i
-
-        applyBlob new Blob [ui8a], type: 'image/png'
 
       fileURL = URL.createObjectURL @file
       img.src = fileURL
     rmFile: ->
       delete @file
       delete @filename
+      delete @filesize
       @nodes.el.title = null
       @nodes.el.style.backgroundImage = null
       @nodes.label.hidden = true if QR.spoiler
       @showFileData()
       URL.revokeObjectURL @URL
+    updateFilename: ->
+      long = "#{@filename} (#{@filesize})"
+      @nodes.el.title = long
+      return unless @ is QR.selected
+      QR.nodes.filename.title = long
     showFileData: ->
       if @file
-        QR.nodes.filename.textContent = @filename
-        QR.nodes.filename.title       = @filename
+        @updateFilename()
+        QR.nodes.filename.value       = @filename
+        QR.nodes.filesize.textContent = @filesize
         QR.nodes.spoiler.checked      = @spoiler
         $.addClass QR.nodes.fileSubmit, 'has-file'
       else
@@ -652,6 +668,7 @@ QR =
       (if oldIndex < newIndex then $.after else $.before) @, el
       post = QR.posts.splice(oldIndex, 1)[0]
       QR.posts.splice newIndex, 0, post
+      QR.status()
 
   captcha:
     init: ->
@@ -683,8 +700,8 @@ QR =
 
       $.on imgContainer, 'click',   @reload.bind @
       $.on input,        'keydown', @keydown.bind @
-      $.get 'captchas', [], (item) =>
-        @sync item['captchas']
+      $.get 'captchas', [], ({captchas}) =>
+        @sync captchas
       $.sync 'captchas', @sync
       # start with an uncached captcha
       @reload()
@@ -697,7 +714,8 @@ QR =
 
       $.addClass QR.nodes.el, 'has-captcha'
       $.after QR.nodes.com.parentNode, [imgContainer, input]
-    sync: (@captchas) ->
+    sync: (captchas) ->
+      QR.captcha.captchas = captchas
       QR.captcha.count()
     getOne: ->
       @clear()
@@ -787,6 +805,7 @@ QR =
       fileSubmit: $ '#file-n-submit',    dialog
       fileButton: $ '#qr-file-button',   dialog
       filename:   $ '#qr-filename',      dialog
+      filesize:   $ '#qr-filesize',      dialog
       fileRM:     $ '#qr-filerm',        dialog
       spoiler:    $ '#qr-file-spoiler',  dialog
       status:     $ '[type=submit]',     dialog
@@ -840,10 +859,9 @@ QR =
       $.on elm, 'blur',  QR.focusout
       $.on elm, 'focus', QR.focusin
     <% } %>
-    $.on dialog,          'focusin',  QR.focusin
-    $.on dialog,          'focusout', QR.focusout
-    for node in [nodes.fileButton, nodes.filename.parentNode]
-      $.on node,           'click',  QR.openFileInput
+    $.on dialog, 'focusin',  QR.focusin
+    $.on dialog, 'focusout', QR.focusout
+    $.on nodes.fileButton, 'click',  QR.openFileInput
     $.on nodes.autohide,   'change', QR.toggleHide
     $.on nodes.close,      'click',  QR.close
     $.on nodes.dumpButton, 'click',  -> nodes.el.classList.toggle 'dump'
@@ -853,7 +871,7 @@ QR =
     $.on nodes.spoiler,    'change', -> QR.selected.nodes.spoiler.click()
     $.on nodes.fileInput,  'change', QR.fileInput
     # save selected post's data
-    for name in ['name', 'email', 'sub', 'com']
+    for name in ['name', 'email', 'sub', 'com', 'filename']
       $.on nodes[name], 'input',  -> QR.selected.save @
     $.on nodes.thread,  'change', -> QR.selected.save @
 
@@ -951,7 +969,9 @@ QR =
       recaptcha_challenge_field: challenge
       recaptcha_response_field:  response
 
-    callbacks =
+    options =
+      responseType: 'document'
+      withCredentials: true
       onload: QR.response
       onerror: ->
         # Connection error, or
@@ -965,8 +985,7 @@ QR =
           Connection error. You may have been <a href=//www.4chan.org/banned target=_blank>banned</a>.
           [<a href="https://github.com/MayhemYDG/4chan-x/wiki/FAQ#what-does-connection-error-you-may-have-been-banned-mean" target=_blank>FAQ</a>]
           """
-    opts =
-      cred: true
+    extra =
       form: $.formData postData
       upCallbacks:
         onload: ->
@@ -980,7 +999,7 @@ QR =
           QR.req.progress = "#{Math.round e.loaded / e.total * 100}%"
           QR.status()
 
-    QR.req = $.ajax $.id('postForm').parentNode.action, callbacks, opts
+    QR.req = $.ajax $.id('postForm').parentNode.action, options, extra
     # Starting to upload might take some time.
     # Provide some feedback that we're starting to submit.
     QR.req.uploadStartTime = Date.now()
@@ -994,20 +1013,23 @@ QR =
     post = QR.posts[0]
     post.unlock()
 
-    tmpDoc = d.implementation.createHTMLDocument ''
-    tmpDoc.documentElement.innerHTML = req.response
-    if ban  = $ '.banType', tmpDoc # banned/warning
-      board = $('.board', tmpDoc).innerHTML
+    resDoc  = req.response
+    if ban  = $ '.banType', resDoc # banned/warning
+      board = $('.board', resDoc).innerHTML
       err   = $.el 'span', innerHTML:
         if ban.textContent.toLowerCase() is 'banned'
-          "You are banned on #{board}! ;_;<br>" +
-          "Click <a href=//www.4chan.org/banned target=_blank>here</a> to see the reason."
+          """
+          You are banned on #{board}! ;_;<br>
+          Click <a href=//www.4chan.org/banned target=_blank>here</a> to see the reason.
+          """
         else
-          "You were issued a warning on #{board} as #{$('.nameBlock', tmpDoc).innerHTML}.<br>" +
-          "Reason: #{$('.reason', tmpDoc).innerHTML}"
-    else if err = tmpDoc.getElementById 'errmsg' # error!
+          """
+          You were issued a warning on #{board} as #{$('.nameBlock', resDoc).innerHTML}.<br>
+          Reason: #{$('.reason', resDoc).innerHTML}
+          """
+    else if err = resDoc.getElementById 'errmsg' # error!
       $('a', err)?.target = '_blank' # duplicate image link
-    else if tmpDoc.title isnt 'Post successful!'
+    else if resDoc.title isnt 'Post successful!'
       err = 'Connection error with sys.4chan.org.'
     else if req.status isnt 200
       err = "Error #{req.statusText} (#{req.status})"
@@ -1041,7 +1063,7 @@ QR =
       QR.error err
       return
 
-    h1 = $ 'h1', tmpDoc
+    h1 = $ 'h1', resDoc
     QR.cleanNotifications()
     QR.notifications.push new Notification 'success', h1.textContent, 5
 

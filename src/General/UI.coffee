@@ -17,8 +17,7 @@ UI = do ->
 
     constructor: (@type) ->
       # Doc here: https://github.com/MayhemYDG/4chan-x/wiki/Menu-API
-      $.on d, 'AddMenuEntry', @addEntry.bind @
-      @close   = close.bind @
+      $.on d, 'AddMenuEntry', @addEntry
       @entries = []
 
     makeMenu: ->
@@ -27,7 +26,7 @@ UI = do ->
         id:        'menu'
         tabIndex:  0
       $.on menu, 'click', (e) -> e.stopPropagation()
-      $.on menu, 'keydown', @keybinds.bind @
+      $.on menu, 'keydown', @keybinds
       menu
 
     toggle: (e, button, data) ->
@@ -63,23 +62,22 @@ UI = do ->
       # Position
       mRect   = menu.getBoundingClientRect()
       bRect   = button.getBoundingClientRect()
-      bTop    = doc.scrollTop  + d.body.scrollTop  + bRect.top
-      bLeft   = doc.scrollLeft + d.body.scrollLeft + bRect.left
+      bTop    = window.scrollY + bRect.top
+      bLeft   = window.scrollX + bRect.left
       cHeight = doc.clientHeight
       cWidth  = doc.clientWidth
-      [top, bottom] = if bRect.top + bRect.height + mRect.height < cHeight
-        ['100%', null]
+      if bRect.top + bRect.height + mRect.height < cHeight
+        $.addClass menu, 'top'
+        $.rmClass  menu, 'bottom'
       else
-        [null, '100%']
-      [left, right] = if bRect.left + mRect.width < cWidth
-        ['0px', null]
+        $.addClass menu, 'bottom'
+        $.rmClass  menu, 'top'
+      if bRect.left + mRect.width < cWidth
+        $.addClass menu, 'left'
+        $.rmClass  menu, 'right'
       else
-        [null, '0px']
-      {style} = menu
-      style.top    = top
-      style.right  = right
-      style.bottom = bottom
-      style.left   = left
+        $.addClass menu, 'right'
+        $.rmClass  menu, 'left'
 
       menu.focus()
 
@@ -99,7 +97,7 @@ UI = do ->
       $.add entry.el, submenu
       return
 
-    close = ->
+    close: =>
       $.rm currentMenu
       currentMenu       = null
       lastToggledButton = null
@@ -111,7 +109,7 @@ UI = do ->
         +(first.style.order or first.style.webkitOrder) - +(second.style.order or second.style.webkitOrder)
       entries[entries.indexOf(entry) + direction]
 
-    keybinds: (e) ->
+    keybinds: (e) =>
       entry = $ '.focused', currentMenu
       while subEntry = $ '.focused', entry
         entry = subEntry
@@ -155,21 +153,20 @@ UI = do ->
       eRect   = entry.getBoundingClientRect()
       cHeight = doc.clientHeight
       cWidth  = doc.clientWidth
-      [top, bottom] = if eRect.top + sRect.height < cHeight
-        ['0px', 'auto']
+      if eRect.top + sRect.height < cHeight
+        $.addClass submenu, 'top'
+        $.rmClass  submenu, 'bottom'
       else
-        ['auto', '0px']
-      [left, right] = if eRect.right + sRect.width < cWidth
-        ['100%', 'auto']
+        $.addClass submenu, 'bottom'
+        $.rmClass  submenu, 'top'
+      if eRect.right + sRect.width < cWidth
+        $.addClass submenu, 'left'
+        $.rmClass  submenu, 'right'
       else
-        ['auto', '100%']
-      {style} = submenu
-      style.top    = top
-      style.bottom = bottom
-      style.left   = left
-      style.right  = right
+        $.addClass submenu, 'right'
+        $.rmClass  submenu, 'left'
 
-    addEntry: (e) ->
+    addEntry: (e) =>
       entry = e.detail
       return if entry.type isnt @type
       @parseEntry entry

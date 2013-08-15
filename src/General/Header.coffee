@@ -10,7 +10,12 @@ Header =
     @toggle = $ '#toggle-header-bar', @bar
 
     @menu = new UI.Menu 'header'
-    $.on $('.menu-button', @bar), 'click', @menuToggle
+    menuButton = $.el 'a',
+      className: 'menu-button'
+      innerHTML: '<i></i>'
+      href: 'javascript:;'
+    $.on menuButton, 'click', @menuToggle
+    @addShortcut menuButton, 0
     $.on @toggle, 'mousedown', @toggleBarVisibility
     $.on window, 'load hashchange', Header.hashScroll
     $.on d, 'CreateNotification', @createNotification
@@ -89,17 +94,13 @@ Header =
     if a = $ "a[href*='/#{g.BOARD}/']", nav
       a.className = 'current'
     fullBoardList = $ '#full-board-list', Header.bar
-    # XXX Getting weird reports here of
-    #   "Header" initialization crashed. TypeError: Cannot read property 'innerHTML' of null
-    # Let's try to find the cause.
-    if nav
-      fullBoardList.innerHTML = nav.innerHTML
-      $.rm $ '#navtopright', fullBoardList
-      btn = $.el 'span',
-        className: 'hide-board-list-button brackets-wrap'
-        innerHTML: '<a href=javascript:;> - </a>'
-      $.on btn, 'click', Header.toggleBoardList
-      $.add fullBoardList, btn
+    fullBoardList.innerHTML = nav.innerHTML
+    $.rm $ '#navtopright', fullBoardList
+    btn = $.el 'span',
+      className: 'hide-board-list-button brackets-wrap'
+      innerHTML: '<a href=javascript:;> - </a>'
+    $.on btn, 'click', Header.toggleBoardList
+    $.add fullBoardList, btn
 
     Header.setCustomNav      Conf['Custom Board Navigation']
     Header.generateBoardList Conf['boardnav']
@@ -140,7 +141,7 @@ Header =
             a.textContent
 
           if m = t.match /-(index|catalog)/
-            a.setAttribute 'data-only', m[1]
+            a.dataset.only = m[1]
             a.href = "//boards.4chan.org/#{board}/"
             a.href += 'catalog' if m[1] is 'catalog'
 
@@ -199,8 +200,7 @@ Header =
       '#boardNavDesktopFoot a[href*="boards.4chan.org"]'
     ].join ', '
     path = if useCatalog then 'catalog' else ''
-    for a in as
-      continue if a.dataset.only
+    for a in as when not a.dataset.only
       a.pathname = "/#{a.pathname.split('/')[1]}/#{path}"
     return
   toggleCatalogLinks: ->
@@ -249,14 +249,17 @@ Header =
     {top} = post.getBoundingClientRect()
     unless Conf['Bottom header']
       headRect = Header.toggle.getBoundingClientRect()
-      top += - headRect.top - headRect.height
-    <% if (type === 'crx') { %>d.body<% } else { %>doc<% } %>.scrollTop += top
+      top -= headRect.top + headRect.height
+    window.scrollBy 0, top
 
-  addShortcut: (el) ->
+  addShortcut: (el, index) ->
     shortcut = $.el 'span',
       className: 'shortcut'
     $.add shortcut, el
-    $.prepend $('#shortcuts', Header.bar), shortcut
+    shortcuts = $ '#shortcuts', Header.bar
+    nodes = [shortcuts.childNodes...]
+    nodes.splice index, 0, shortcut
+    $.add shortcuts, nodes
 
   menuToggle: (e) ->
     Header.menu.toggle e, @, g

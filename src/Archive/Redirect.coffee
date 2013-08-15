@@ -1,8 +1,9 @@
 Redirect =
   archives: `<%= JSON.stringify(grunt.file.readJSON('json/archives.json')) %>`
-  thread: {}
-  post:   {}
-  file:   {}
+  data:
+    thread: {}
+    post:   {}
+    file:   {}
 
   init: ->
     for boardID, data of Conf['selectedArchives']
@@ -13,24 +14,24 @@ Redirect =
             archive.files
           else
             archive.boards
-          Redirect[type][boardID] = archive if boardID in arr
+          Redirect.data[type][boardID] = archive if boardID in arr
     for archive in Conf['archives']
       for boardID in archive.boards
-        unless boardID of Redirect.thread
-          Redirect.thread[boardID] = archive
-        unless boardID of Redirect.post or archive.software isnt 'foolfuuka'
-          Redirect.post[boardID] = archive
-        unless boardID of Redirect.file or boardID not in archive.files
-          Redirect.file[boardID] = archive
+        unless boardID of Redirect.data.thread
+          Redirect.data.thread[boardID] = archive
+        unless boardID of Redirect.data.post or archive.software isnt 'foolfuuka'
+          Redirect.data.post[boardID] = archive
+        unless boardID of Redirect.data.file or boardID not in archive.files
+          Redirect.data.file[boardID] = archive
 
     Redirect.update()
 
   update: (cb) ->
     $.get 'lastarchivecheck', 0, ({lastarchivecheck}) ->
       now = Date.now()
-      # Update the list of archives every 4 days.
+      # Update the list of archives every 2 days.
       # The list is also updated when 4chan X gets updated.
-      return if lastarchivecheck > now - 4 * $.DAY
+      return if lastarchivecheck > now - 2 * $.DAY
       $.ajax '<%= meta.page %>json/archives.json', onload: ->
         return unless @status is 200
         Conf['archives'] = JSON.parse @response
@@ -40,7 +41,7 @@ Redirect =
         cb? now
 
   to: (dest, data) ->
-    archive = (if dest is 'search' then Redirect.thread else Redirect[dest])[data.boardID]
+    archive = (if dest is 'search' then Redirect.data.thread else Redirect.data[dest])[data.boardID]
     return '' unless archive
     Redirect[dest] archive, data
 
@@ -73,7 +74,9 @@ Redirect =
     # Remove necessary HTTPS procotol in September 2013.
     if archive.name in ['Foolz', 'NSFW Foolz']
       protocol = 'https://'
-    "#{protocol}#{archive.domain}/_/api/chan/post/?board=#{boardID}&num=#{postID}"
+    URL = new String "#{protocol}#{archive.domain}/_/api/chan/post/?board=#{boardID}&num=#{postID}"
+    URL.archive = archive
+    URL
 
   file: (archive, {boardID, filename}) ->
     "#{Redirect.protocol archive}#{archive.domain}/#{boardID}/full_image/#{filename}"

@@ -38,7 +38,6 @@ Settings =
       $.set
         archives: Conf['archives']
         lastarchivecheck: now
-        lastupdate: now
         previousversion: g.VERSION
 
     Settings.addSection 'Main',     Settings.main
@@ -171,8 +170,7 @@ Settings =
       data =
         version: g.VERSION
         date: now
-      Conf['WatchedThreads'] = {}
-      for db in DataBoards
+      for db in DataBoard.keys
         Conf[db] = boards: {}
       # Make sure to export the most recent data.
       $.get Conf, (Conf) ->
@@ -280,11 +278,13 @@ Settings =
             '%DMD5'
           else
             c
-      for key, val of Config.hotkeys
-        continue unless key of data.Conf
+      for key, val of Config.hotkeys when key of data.Conf
         data.Conf[key] = data.Conf[key].replace(/ctrl|alt|meta/g, (s) -> "#{s[0].toUpperCase()}#{s[1..]}").replace /(^|.+\+)[A-Z]$/g, (s) ->
           "Shift+#{s[0...-1]}#{s[-1..].toLowerCase()}"
-      data.Conf.WatchedThreads = data.WatchedThreads
+      data.Conf['WatchedThreads'] = data.WatchedThreads
+    if data.Conf['WatchedThreads']
+      data.Conf['watchedThreads'] = boards: ThreadWatcher.convert data.Conf['WatchedThreads']
+      delete data.Conf['WatchedThreads']
     $.set data.Conf
   convertSettings: (data, map) ->
     for prevKey, newKey of map
@@ -455,7 +455,7 @@ Settings =
     $.get 'selectedArchives', Conf['selectedArchives'], ({selectedArchives}) ->
       for boardID, data of selectedArchives
         for type, uid of data
-          if option = $ "select[data-boardid='#{boardID}'][data-type='#{type}'] > option[value='#{uid}']", section
+          if option = $ "select[data-board-i-d='#{boardID}'][data-type='#{type}'] > option[value='#{uid}']", section
             option.selected = true
       return
   addArchiveCell: (row, boardID, data, type) ->
@@ -470,9 +470,7 @@ Settings =
       td.innerHTML = '<select></select>'
       select = td.firstElementChild
       unless select.disabled = length is 1
-        # XXX GM can't into datasets
-        select.setAttribute 'data-boardid', boardID
-        select.setAttribute 'data-type',    type
+        $.extend select.dataset, {boardID, type}
         $.on select, 'change', Settings.saveSelectedArchive
       $.add select, options
     else
@@ -480,7 +478,7 @@ Settings =
     $.add row, td
   saveSelectedArchive: ->
     $.get 'selectedArchives', Conf['selectedArchives'], ({selectedArchives}) =>
-      (selectedArchives[@dataset.boardid] or= {})[@dataset.type] = +@value
+      (selectedArchives[@dataset.boardID] or= {})[@dataset.type] = +@value
       $.set 'selectedArchives', selectedArchives
 
   keybinds: (section) ->

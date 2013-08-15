@@ -10,6 +10,8 @@ Get =
     "/#{thread.board}/ - #{excerpt}"
   threadFromRoot: (root) ->
     g.threads["#{g.BOARD}.#{root.id[1..]}"]
+  threadFromNode: (node) ->
+    Get.threadFromRoot $.x 'ancestor::div[@class="thread"]', node
   postFromRoot: (root) ->
     link    = $ 'a[title="Highlight this post"]', root
     boardID = link.pathname.split('/')[1]
@@ -17,10 +19,10 @@ Get =
     index   = root.dataset.clone
     post    = g.posts["#{boardID}.#{postID}"]
     if index then post.clones[index] else post
-  postFromNode: (root) ->
-    Get.postFromRoot $.x 'ancestor::div[contains(@class,"postContainer")][1]', root
-  contextFromNode: (quotelink) ->
-    Get.postFromRoot $.x 'ancestor::div[parent::div[@class="thread"]][1]', quotelink
+  postFromNode: (node) ->
+    Get.postFromRoot $.x 'ancestor::div[contains(@class,"postContainer")][1]', node
+  contextFromNode: (node) ->
+    Get.postFromRoot $.x 'ancestor::div[parent::div[@class="thread"]][1]', node
   postDataFromLink: (link) ->
     if link.hostname is 'boards.4chan.org'
       path     = link.pathname.split '/'
@@ -28,9 +30,8 @@ Get =
       threadID = path[3]
       postID   = link.hash[2..]
     else # resurrected quote
-      boardID  = link.dataset.boardid
-      threadID = link.dataset.threadid or 0
-      postID   = link.dataset.postid
+      {boardID, threadID, postID} = link.dataset
+      threadID or= 0
     return {
       boardID:  boardID
       threadID: +threadID
@@ -72,8 +73,10 @@ Get =
       $.cache "//api.4chan.org/#{boardID}/res/#{threadID}.json", ->
         Get.fetchedPost @, boardID, threadID, postID, root, context
     else if url = Redirect.to 'post', {boardID, postID}
-      $.cache url, ->
-        Get.archivedPost @, boardID, postID, root, context
+      $.cache url,
+        -> Get.archivedPost @, boardID, postID, root, context
+      ,
+        withCredentials: url.archive.withCredentials
   insert: (post, root, context) ->
     # Stop here if the container has been removed while loading.
     return unless root.parentNode
@@ -98,8 +101,10 @@ Get =
     if status not in [200, 304]
       # The thread can die by the time we check a quote.
       if url = Redirect.to 'post', {boardID, postID}
-        $.cache url, ->
-          Get.archivedPost @, boardID, postID, root, context
+        $.cache url,
+          -> Get.archivedPost @, boardID, postID, root, context
+        ,
+          withCredentials: url.archive.withCredentials
       else
         $.addClass root, 'warning'
         root.textContent =
@@ -116,8 +121,10 @@ Get =
       if post.no > postID
         # The post can be deleted by the time we check a quote.
         if url = Redirect.to 'post', {boardID, postID}
-          $.cache url, ->
-            Get.archivedPost @, boardID, postID, root, context
+          $.cache url,
+            -> Get.archivedPost @, boardID, postID, root, context
+          ,
+            withCredentials: url.archive.withCredentials
         else
           $.addClass root, 'warning'
           root.textContent = "Post No.#{postID} was not found."
@@ -149,11 +156,7 @@ Get =
     # https://github.com/eksopl/asagi/blob/master/src/main/java/net/easymodo/asagi/Yotsuba.java#L109-138
     bq.innerHTML = bq.innerHTML.replace ///
       \n
-      | \[/?b\]
-      | \[/?spoiler\]
-      | \[/?code\]
-      | \[/?moot\]
-      | \[/?banned\]
+      | \[/?[a-z]+(:lit)?\]
       ///g, (text) ->
         switch text
           when '\n'
@@ -175,9 +178,11 @@ Get =
           when '[/moot]'
             '</div>'
           when '[banned]'
-            '<b style="color: red;">'
+            '<strong style="color: red;">'
           when '[/banned]'
-            '</b>'
+            '</strong>'
+          else
+            text.replace ':lit', ''
 
     comment = bq.innerHTML
       # greentext

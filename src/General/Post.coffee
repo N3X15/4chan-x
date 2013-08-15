@@ -72,33 +72,38 @@ class Post
     # XPathResult.ORDERED_NODE_SNAPSHOT_TYPE === 7
     nodes = d.evaluate './/br|.//text()', bq, null, 7, null
     for i in [0...nodes.snapshotLength]
-      text.push if data = nodes.snapshotItem(i).data then data else '\n'
+      text.push nodes.snapshotItem(i).data or '\n'
     @info.comment = text.join('').trim().replace /\s+$/gm, ''
 
   parseQuotes: ->
-    quotes = {}
+    @quotes = []
     for quotelink in $$ '.quotelink', @nodes.comment
-      # Don't add board links. (>>>/b/)
-      {hash} = quotelink
-      continue unless hash
+      @parseQuote quotelink
+    return
 
-      # Don't add catalog links. (>>>/b/catalog or >>>/b/search)
-      {pathname} = quotelink
-      continue if /catalog$/.test pathname
+  parseQuote: (quotelink) ->
+    # Only add quotes that link to posts on an imageboard.
+    # Don't add:
+    #  - board links. (>>>/b/)
+    #  - catalog links. (>>>/b/catalog or >>>/b/search)
+    #  - rules links. (>>>/a/rules)
+    #  - text-board quotelinks. (>>>/img/1234)
+    return unless match = quotelink.href.match ///
+      boards\.4chan\.org/
+      ([^/]+) # boardID
+      /res/\d+#p
+      (\d+)   # postID
+      $
+    ///
 
-      # Don't add rules links. (>>>/a/rules)
-      # Don't add text-board quotelinks. (>>>/img/1234)
-      continue if quotelink.hostname isnt 'boards.4chan.org'
+    @nodes.quotelinks.push quotelink
 
-      @nodes.quotelinks.push quotelink
+    # Don't count capcode replies as quotes in OPs. (Admin/Mod/Dev Replies: ...)
+    return if @isClone or !@isReply and $.hasClass quotelink.parentNode.parentNode, 'capcodeReplies'
 
-      # Don't count capcode replies as quotes in OPs. (Admin/Mod/Dev Replies: ...)
-      continue if !@isReply and $.hasClass quotelink.parentNode.parentNode, 'capcodeReplies'
-
-      # Basically, only add quotes that link to posts on an imageboard.
-      quotes["#{pathname.split('/')[1]}.#{hash[2..]}"] = true
-    return if @isClone
-    @quotes = Object.keys quotes
+    # ES6 Set when?
+    fullID = "#{match[1]}.#{match[2]}"
+    @quotes.push fullID if @quotes.indexOf(fullID) is -1
 
   parseFile: (that) ->
     return unless (fileEl = $ '.file', @nodes.post) and thumb = $ 'img[data-md5]', fileEl
@@ -162,8 +167,7 @@ class Post
     return if file
     # Get quotelinks/backlinks to this post
     # and paint them (Dead).
-    for quotelink in Get.allQuotelinksLinkingTo @
-      continue if $.hasClass quotelink, 'deadlink'
+    for quotelink in Get.allQuotelinksLinkingTo @ when not $.hasClass quotelink, 'deadlink'
       $.add quotelink, $.tn '\u00A0(Dead)'
       $.addClass quotelink, 'deadlink'
     return
@@ -194,5 +198,5 @@ class Post
   rmClone: (index) ->
     @clones.splice index, 1
     for clone in @clones[index..]
-      clone.nodes.root.setAttribute 'data-clone', index++
+      clone.nodes.root.dataset.clone = index++
     return

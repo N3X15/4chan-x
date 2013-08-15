@@ -1,5 +1,5 @@
 Main =
-  init: (items) ->
+  init: ->
     pathname = location.pathname.split '/'
     g.BOARD  = new Board pathname[1]
     return if g.BOARD.ID in ['z', 'fk']
@@ -26,17 +26,29 @@ Main =
         Conf[parent] = obj
       return
     flatten null, Config
-    for db in DataBoards
+    for db in DataBoard.keys
       Conf[db] = boards: {}
     Conf['selectedArchives'] = {}
     Conf['archives'] = Redirect.archives
-    $.get Conf, Main.initFeatures
+    $.get Conf, (items) ->
+      $.extend Conf, items
+      <% if (type === 'crx') { %>
+      unless items
+        new Notification 'error', $.el 'span',
+          innerHTML: """
+          It seems like your <%= meta.name %> settings became corrupted due to a <a href="https://code.google.com/p/chromium/issues/detail?id=261623" target=_blank>Chrome bug</a>.<br>
+          Unfortunately, you'll have to <a href="https://github.com/MayhemYDG/4chan-x/wiki/FAQ#known-problems" target=_blank>fix it yourself</a>.
+          """
+        # Track resolution of this bug.
+        Main.logError
+          message: 'Chrome Storage API bug'
+          error: new Error chrome.runtime.lastError.message or 'no lastError.message'
+      <% } %>
+      Main.initFeatures()
 
     $.on d, '4chanMainInit', Main.initStyle
 
-  initFeatures: (items) ->
-    Conf = items
-
+  initFeatures: ->
     switch location.hostname
       when 'api.4chan.org'
         return
@@ -112,8 +124,10 @@ Main =
     initFeature 'Thread Stats',             ThreadStats
     initFeature 'Thread Updater',           ThreadUpdater
     initFeature 'Thread Watcher',           ThreadWatcher
+    initFeature 'Thread Watcher (Menu)',    ThreadWatcher.menu
     initFeature 'Index Navigation',         Nav
     initFeature 'Keybinds',                 Keybinds
+    initFeature 'Show Dice Roll',           Dice
     # c.timeEnd 'All initializations'
 
     $.on d, 'AddCallback', Main.addCallback
@@ -125,7 +139,6 @@ Main =
     # disable the mobile layout
     $('link[href*=mobile]', d.head)?.disabled = true
     <% if (type === 'crx') { %>
-    $.addClass doc, 'webkit'
     $.addClass doc, 'blink'
     <% } else { %>
     $.addClass doc, 'gecko'
@@ -163,9 +176,8 @@ Main =
         location.replace href or "/#{g.BOARD}/"
       return
 
-    unless $.hasClass doc, 'fourchan-x'
-      # Something might have gone wrong!
-      Main.initStyle()
+    # Something might have gone wrong!
+    Main.initStyle()
 
     if board = $ '.board'
       threads = []
@@ -198,19 +210,7 @@ Main =
     catch err
       new Notification 'warning', 'Cookies need to be enabled on 4chan for <%= meta.name %> to properly function.', 30
 
-    <% if (type === 'userscript') { %>
-    el = $.el 'span'
-    el.style.flex = 'test'
-    if el.style.flex is 'test'
-      el.innerHTML = """
-      Firefox is not correctly set up and some <%= meta.name %> features will be displayed incorrectly.<br>
-      Follow the instructions of the <a href='<%= meta.page %>' target=_blank>install guide</a> to fix it.
-      """
-      new Notification 'warning', el, 30
-    <% } %>
-
     $.event '4chanXInitFinished'
-    Main.checkUpdate()
 
   callbackNodes: (klass, nodes) ->
     # get the nodes' length only once
@@ -243,52 +243,6 @@ Main =
         return
     obj.callback.isAddon = true
     Klass::callbacks.push obj.callback
-
-  checkUpdate: ->
-    return unless Conf['Check for Updates'] and Main.isThisPageLegit()
-    # Check for updates after 7 days since the last update.
-    # After that, check for updates every day if we still haven't updated.
-    now  = Date.now()
-    freq = 7 * $.DAY
-    items =
-      lastupdate:  0
-      lastchecked: 0
-    $.get items, (items) ->
-      if items.lastupdate > now - freq or items.lastchecked > now - $.DAY
-        return
-      $.ajax '<%= meta.page %><%= meta.buildsPath %>version', onload: ->
-        return unless @status is 200
-        version = @response
-        return unless /^\d\.\d+\.\d+$/.test version
-        if g.VERSION is version
-          # Don't check for updates too frequently if there wasn't one in a 'long' time.
-          $.set 'lastupdate', now
-          return
-        $.set 'lastchecked', now
-        # dmichnowicz
-        # 19 juin 2013 09:39:28
-        # innerHTML is not allowed in conjunction with external resources: [...]
-        #
-        # mayhemydg
-        # 19 juin 2013 09:43:14
-        # Will it be good if I make sure to match a version number?
-        #
-        # dmichnowicz
-        # 19 juin 2013 09:46:12
-        # Yes.
-        #
-        # mayhemydg
-        # 19 juin 2013 13:04:30
-        # Well actually there is nothing to fix, the following code makes sure this is a
-        # valid version number and precedes the innerHTML part: [see /^\d\.\d+\.\d+$/.test]
-        #
-        # dmichnowicz
-        # 21 juin 2013 04:52:37
-        # OK but anyway please remove that line of code.
-        el = $.el 'span',
-          textContent: "Update: <%= meta.name %> v#{version} is out, get it "
-        el.innerHTML += '<a href=<%= meta.page %> target=_blank>here</a>.'
-        new Notification 'info', el, 120
 
   handleErrors: (errors) ->
     unless errors instanceof Array
@@ -332,19 +286,21 @@ Main =
   postErrors: ->
     return if Main.v2Detected
     errors = Main.errors.filter((d) -> !!d.error.stack).map((d) ->
-      {stack} = d.error
       <% if (type === 'userscript') { %>
       # Before:
       # someFn@file:///C:/Users/<USER>/AppData/Roaming/Mozilla/Firefox/Profiles/<garbage>.default/gm_scripts/4chan_X/4chan-X.user.js:line_number
       # someFn@file:///home/<USER>/.mozilla/firefox/<garbage>.default/gm_scripts/4chan_X/4chan-X.user.js:line_number
       # After:
       # someFn@4chan-X.user.js:line_number
-      stack = stack.replace /file:\/{3}.+\//g, '' if stack
+      {name, message, stack} = d.error
+      stack = stack.replace /file:\/{3}.+\//g, ''
+      "#{d.message} #{name}: #{message} #{stack}"
+      <% } else { %>
+      "#{d.message} #{d.error.stack}"
       <% } %>
-      "#{d.message} #{stack}"
     ).join '\n'
     return unless errors
-    $.ajax '<%= meta.page %>errors', {},
+    $.ajax '<%= meta.page %>errors', null,
       sync: true
       form: $.formData
         n: "<%= meta.name %> v#{g.VERSION}"

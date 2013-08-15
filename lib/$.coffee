@@ -24,12 +24,9 @@ $.formData = (form) ->
   if form instanceof HTMLFormElement
     return new FormData form
   fd = new FormData()
-  for key, val of form
-    continue unless val
-    # XXX GM bug
-    # if val instanceof Blob
-    if val.size and val.name
-      fd.append key, val, val.name
+  for key, val of form when val
+    if typeof val is 'object' and 'newName' of val
+      fd.append key, val, val.newName
     else
       fd.append key, val
   fd
@@ -37,28 +34,26 @@ $.extend = (object, properties) ->
   for key, val of properties
     object[key] = val
   return
-$.ajax = (url, callbacks, opts={}) ->
-  {type, cred, headers, upCallbacks, form, sync} = opts
-  r = new XMLHttpRequest()
-  type or= form and 'post' or 'get'
-  r.open type, url, !sync
-  for key, val of headers
-    r.setRequestHeader key, val
-  $.extend r, callbacks
-  $.extend r.upload, upCallbacks
-  try
-    # Firefox throws an error if you try
-    # to set this on a synchronous XHR.
-    # Only cookies from the remote domain
-    # are used in a request withCredentials.
-    r.withCredentials = cred
-  catch err
-    # do nothing
-  r.send form
-  r
+$.ajax = do ->
+  # Status Code 304: Not modified
+  # With the `If-Modified-Since` header we only receive the HTTP headers and no body for 304 responses.
+  # This saves a lot of bandwidth and CPU time for both the users and the servers.
+  lastModified = {}
+  (url, options, extra={}) ->
+    {type, whenModified, upCallbacks, form, sync} = extra
+    r = new XMLHttpRequest()
+    type or= form and 'post' or 'get'
+    r.open type, url, !sync
+    if whenModified
+      r.setRequestHeader 'If-Modified-Since', lastModified[url] or '0'
+      $.on r, 'load', -> lastModified[url] = r.getResponseHeader 'Last-Modified'
+    $.extend r, options
+    $.extend r.upload, upCallbacks
+    r.send form
+    r
 $.cache = do ->
   reqs = {}
-  (url, cb) ->
+  (url, cb, options) ->
     if req = reqs[url]
       if req.readyState is 4
         cb.call req, req.evt
@@ -66,13 +61,13 @@ $.cache = do ->
         req.callbacks.push cb
       return
     rm = -> delete reqs[url]
-    req = $.ajax url,
-      onload: (e) ->
-        cb.call @, e for cb in @callbacks
-        @evt = e
-        delete @callbacks
-      onabort: rm
-      onerror: rm
+    req = $.ajax url, options
+    $.on req, 'load', (e) ->
+      cb.call @, e for cb in @callbacks
+      @evt = e
+      delete @callbacks
+    $.on req, 'abort', rm
+    $.on req, 'error', rm
     req.callbacks = [cb]
     reqs[url] = req
 $.cb =
@@ -147,7 +142,7 @@ $.off = (el, events, handler) ->
 $.event = (event, detail, root=d) ->
   root.dispatchEvent new CustomEvent event, {bubbles: true, detail}
 <% if (type === 'userscript') { %>
-$.open = (URL) -> GM_openInTab URL
+$.open = GM_openInTab
 <% } else { %>
 $.open = (URL) -> window.open URL, '_blank'
 <% } %>

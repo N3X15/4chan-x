@@ -12,7 +12,7 @@ Config =
       'Thread Expansion':             [true,  'Add buttons to expand threads.']
       'Index Navigation':             [false, 'Add buttons to navigate between threads.']
       'Reply Navigation':             [false, 'Add buttons to navigate to top / bottom of thread.']
-      'Check for Updates':            [true,  'Notify when updated versions of <%= meta.name %> are available.']
+      'Show Dice Roll':               [true,  'Show dice that were entered into the email field.']
     'Filtering':
       'Anonymize':                    [false, 'Make everyone Anonymous.']
       'Filter':                       [true,  'Self-moderation placebo.']
@@ -46,8 +46,6 @@ Config =
       'Thread Excerpt':               [true,  'Show an excerpt of the thread in the tab title.']
       'Thread Stats':                 [true,  'Display reply, image, and page count.']
       'Thread Watcher':               [true,  'Bookmark threads.']
-      'Auto Watch':                   [true,  'Automatically watch threads you start.']
-      'Auto Watch Reply':             [false, 'Automatically watch threads you reply to.']
     'Posting':
       'Quick Reply':                  [true,  'All-in-one form to reply, create threads, automate dumping and more.']
       'Persistent QR':                [false, 'The Quick reply won\'t disappear after posting.']
@@ -78,6 +76,11 @@ Config =
     'Fit height':       [false, '']
     'Expand spoilers':  [false, 'Expand all images along with spoilers.']
     'Expand from here': [true,  'Expand all images only from current position to thread end.']
+  threadWatcher:
+    'Current Board':    [false, 'Only show watched threads from the current board.']
+    'Auto Watch':       [true,  'Automatically watch threads you start.']
+    'Auto Watch Reply': [false, 'Automatically watch threads you reply to.']
+    'Auto Prune':       [false, 'Automatically prune 404\'d threads.']
   filter:
     name: """
       # Filter any namefags:
