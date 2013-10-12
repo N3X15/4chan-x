@@ -19,22 +19,15 @@ ThreadWatcher =
       ThreadWatcher.fetchAllStatus()
       @db.save()
 
-    # XXX tmp conversion from old to new format
-    $.get 'WatchedThreads', null, ({WatchedThreads}) ->
-      return unless WatchedThreads
-      for boardID, threads of ThreadWatcher.convert WatchedThreads
-        for threadID, data of threads
-          ThreadWatcher.db.set {boardID, threadID, val: data}
-      $.delete 'WatchedThreads'
-
-    Thread::callbacks.push
+    Thread.callbacks.push
       name: 'Thread Watcher'
       cb:   @node
   node: ->
-    toggler = $.el 'img',
+    toggler = $.el 'a',
       className: 'watcher-toggler'
+      href: 'javascript:;'
     $.on toggler, 'click', ThreadWatcher.cb.toggle
-    $.before $('input', @OP.nodes.post), toggler
+    $.after $('input', @OP.nodes.post), [toggler, $.tn ' ']
   ready: ->
     $.off d, '4chanXInitFinished', ThreadWatcher.ready
     return unless Main.isThisPageLegit()
@@ -154,11 +147,13 @@ ThreadWatcher =
     $.add list, nodes
 
     for threadID, thread of g.BOARD.threads
-      toggler = $ '.watcher-toggler', thread.OP.nodes.post
-      toggler.src = if ThreadWatcher.db.get {boardID: thread.board.ID, threadID}
-        Favicon.default
-      else
-        Favicon.empty
+      $.extend $('.watcher-toggler', thread.OP.nodes.post),
+        if ThreadWatcher.db.get {boardID: thread.board.ID, threadID}
+          className: 'watcher-toggler icon-bookmark'
+          title:     'Unwatch thread'
+        else
+          className: 'watcher-toggler icon-bookmark-empty'
+          title:     'Watch thread'
 
     for refresher in ThreadWatcher.menu.refreshers
       refresher()

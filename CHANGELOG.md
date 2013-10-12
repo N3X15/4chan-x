@@ -1,4 +1,54 @@
-- The QR now allows you to edit the filename on the fly.
+### 3.11.5 - *2013-10-03*
+
+Minor Chrome 30 fix.
+
+### 3.11.4 - *2013-09-23*
+
+Tiny posting cooldown adjustment:
+ - You can post an image reply immediately after a non-image reply.
+
+### 3.11.3 - *2013-09-19*
+
+Update posting cooldown timers to match 4chan settings:
+ - Cooldown may vary between inter-thread and intra-thread replies.
+ - Cooldown may vary when posting a file or not.
+ - Cooldown does not take sageing into account anymore.
+ - Timers vary across boards.
+
+### 3.11.2 - *2013-09-17*
+
+Updated post and deletion cooldown timers to match 4chan changes: they are now twice longer.
+
+### 3.11.1 - *2013-09-13*
+
+- Added support for the flag selector on /pol/.
+
+## 3.11.0 - *2013-09-06*
+
+- **New feature**: `Color User IDs`, enabled by default
+
+## 3.10.0 - *2013-08-22*
+
+- **New feature**: `Linkify` and `Clean Links`, enabled by default
+ - Linkify will turn text URLs into working links.
+ - Clean Links will get rid of spoiler and code tags in linkified URLs used to bypass spam blocks.
+- New desktop notification:
+ - The QR will now warn you when you are running low on cached captchas while auto-posting.
+
+## 3.9.0 - *2013-08-18*
+
+- **New feature**: `Desktop Notifications`
+ - Enabled by default, but you will have to grant your browser permissions to display them or disable them altogether:<br>
+  ![authorize or disable](img/changelog/3.9.0/0.png)
+ - Clicking on a notification will bring up the relevant tab. (Does not work on Firefox unfortunately, [see bug 874050](https://bugzilla.mozilla.org/show_bug.cgi?id=874050).)
+ - Notifications will appear when someone quotes you, clicking such notification will also scroll the thread to the relevant post.
+ - Notifications will appear for posting errors instead of alert popups.
+ - Opera does *not* support desktop notifications yet.
+
+## 3.8.0 - *2013-08-15*
+
+- The QR now allows you to edit the filename on the fly:<br>
+![filename editing](img/changelog/3.8.0/0.gif)
 
 ### 3.7.1 - *2013-08-13*
 

@@ -2,13 +2,11 @@ Filter =
   filters: {}
   init: ->
     return if g.VIEW is 'catalog' or !Conf['Filter']
-    
-    # Preclean
+
     for key of Config.filter
       @filters[key] = []
       for filter in Conf[key].split '\n'
         continue if filter[0] is '#'
-        @loadFilterFrom key, filter.trim()
     
     # Load subscriptions
     #TODO: Find way to associate the URL being retrieved with the callback.
@@ -50,10 +48,11 @@ Filter =
         delete @filters[key]
 
     return unless Object.keys(@filters).length
-    Post::callbacks.push
+    Post.callbacks.push
       name: 'Filter'
       cb:   @node
-    
+
+
   loadFilterFrom: (key, filter) ->
     unless regexp = filter.match /\/(.+)\/(\w*)/
       return
@@ -80,20 +79,6 @@ Filter =
         new Notification 'warning', err.message, 60
         return
 
-    # Filter OPs along with their threads, replies only, or both.
-    # Defaults to both.
-    op = filter.match(/[^t]op:(yes|no|only)/)?[1] or 'yes'
-
-    # Overrule the `Show Stubs` setting.
-    # Defaults to stub showing.
-    stub = switch filter.match(/stub:(yes|no)/)?[1]
-      when 'yes'
-        true
-      when 'no'
-        false
-      else
-        Conf['Stubs']
-
     # Highlight the post, or hide it.
     # If not specified, the highlight class will be filter-highlight.
     # Defaults to post hiding.
@@ -104,7 +89,31 @@ Filter =
       top = filter.match(/top:(yes|no)/)?[1] or 'yes'
       top = top is 'yes' # Turn it into a boolean
 
-    @filters[key].push @createFilter regexp, op, stub, hl, top
+      # Filter OPs along with their threads, replies only, or both.
+      # Defaults to both.
+      op = filter.match(/[^t]op:(yes|no|only)/)?[1] or 'yes'
+
+      # Overrule the `Show Stubs` setting.
+      # Defaults to stub showing.
+      stub = switch filter.match(/stub:(yes|no)/)?[1]
+        when 'yes'
+          true
+        when 'no'
+          false
+        else
+          Conf['Stubs']
+
+      # Highlight the post, or hide it.
+      # If not specified, the highlight class will be filter-highlight.
+      # Defaults to post hiding.
+      if hl = /highlight/.test filter
+        hl  = filter.match(/highlight:(\w+)/)?[1] or 'filter-highlight'
+        # Put highlighted OP's thread on top of the board page or not.
+        # Defaults to on top.
+        top = filter.match(/top:(yes|no)/)?[1] or 'yes'
+        top = top is 'yes' # Turn it into a boolean
+
+      @filters[key].push @createFilter regexp, op, stub, hl, top
 
   createFilter: (regexp, op, stub, hl, top) ->
     test =

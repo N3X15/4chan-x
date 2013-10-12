@@ -3,14 +3,13 @@ ImageExpand =
     return if g.VIEW is 'catalog' or !Conf['Image Expansion']
 
     @EAI = $.el 'a',
-      className: 'expand-all-shortcut'
-      textContent: 'EAI'
+      className: 'expand-all-shortcut icon-resize-full'
       title: 'Expand All Images'
       href: 'javascript:;'
     $.on @EAI, 'click', ImageExpand.cb.toggleAll
     Header.addShortcut @EAI, 2
 
-    Post::callbacks.push
+    Post.callbacks.push
       name: 'Image Expansion'
       cb:   @node
   node: ->
@@ -23,7 +22,7 @@ ImageExpand =
       ImageExpand.contract @
       ImageExpand.expand @
       return
-    if ImageExpand.on and !@isHidden
+    if ImageExpand.on and !@isHidden and (Conf['Expand spoilers'] or !@file.isSpoiler)
       ImageExpand.expand @
   cb:
     toggle: (e) ->
@@ -33,11 +32,11 @@ ImageExpand =
     toggleAll: ->
       $.event 'CloseMenu'
       if ImageExpand.on = $.hasClass ImageExpand.EAI, 'expand-all-shortcut'
-        ImageExpand.EAI.className = 'contract-all-shortcut'
+        ImageExpand.EAI.className = 'contract-all-shortcut icon-resize-small'
         ImageExpand.EAI.title     = 'Contract All Images'
         func = ImageExpand.expand
       else
-        ImageExpand.EAI.className = 'expand-all-shortcut'
+        ImageExpand.EAI.className = 'expand-all-shortcut icon-resize-full'
         ImageExpand.EAI.title     = 'Expand All Images'
         func = ImageExpand.contract
       for ID, post of g.posts
@@ -58,7 +57,6 @@ ImageExpand =
     unless post.file.isExpanded or $.hasClass thumb, 'expanding'
       ImageExpand.expand post
       return
-    ImageExpand.contract post
 
     # Scroll back to the thumbnail when contracting the image
     # to avoid being left miles away from the relevant post.
@@ -71,6 +69,7 @@ ImageExpand =
     if rect.left < 0
       x = -window.scrollX
     window.scrollBy x, y if x or y
+    ImageExpand.contract post
 
   contract: (post) ->
     $.rmClass post.nodes.root, 'expanded-image'

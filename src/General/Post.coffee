@@ -1,5 +1,5 @@
 class Post
-  callbacks: []
+  @callbacks = []
   toString: -> @ID
 
   constructor: (root, @thread, @board, that={}) ->
@@ -56,22 +56,23 @@ class Post
     @kill() if that.isArchived
 
   parseComment: ->
+    # Merge text nodes and remove empty ones.
+    @nodes.comment.normalize()
     # Get the comment's text.
     # <br> -> \n
     # Remove:
     #   'Comment too long'...
-    #   Admin/Mod/Dev replies. (/q/)
     #   EXIF data. (/p/)
     #   Rolls. (/tg/)
     #   Preceding and following new lines.
     #   Trailing spaces.
     bq = @nodes.comment.cloneNode true
-    for node in $$ '.abbr, .capcodeReplies, .exif, b', bq
+    for node in $$ '.abbr, .exif, b', bq
       $.rm node
     text = []
     # XPathResult.ORDERED_NODE_SNAPSHOT_TYPE === 7
     nodes = d.evaluate './/br|.//text()', bq, null, 7, null
-    for i in [0...nodes.snapshotLength]
+    for i in [0...nodes.snapshotLength] by 1
       text.push nodes.snapshotItem(i).data or '\n'
     @info.comment = text.join('').trim().replace /\s+$/gm, ''
 
@@ -98,8 +99,7 @@ class Post
 
     @nodes.quotelinks.push quotelink
 
-    # Don't count capcode replies as quotes in OPs. (Admin/Mod/Dev Replies: ...)
-    return if @isClone or !@isReply and $.hasClass quotelink.parentNode.parentNode, 'capcodeReplies'
+    return if @isClone
 
     # ES6 Set when?
     fullID = "#{match[1]}.#{match[2]}"

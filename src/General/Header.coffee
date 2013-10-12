@@ -12,7 +12,7 @@ Header =
     @menu = new UI.Menu 'header'
     menuButton = $.el 'a',
       className: 'menu-button'
-      innerHTML: '<i></i>'
+      innerHTML: '<i class=icon-reorder></i>'
       href: 'javascript:;'
     $.on menuButton, 'click', @menuToggle
     @addShortcut menuButton, 0
@@ -88,6 +88,8 @@ Header =
 
       Header.setCatalogLinks Conf['Header catalog links']
       $.sync 'Header catalog links', Header.setCatalogLinks
+
+    @enableDesktopNotifications()
 
   setBoardList: ->
     nav = $.id 'boardNavDesktop'
@@ -175,7 +177,7 @@ Header =
       'The header bar will automatically hide itself.'
     else
       'The header bar will remain visible.'
-    new Notification 'info', message, 2
+    new Notice 'info', message, 2
 
   setBarPosition: (bottom) ->
     Header.barPositionToggler.checked = bottom
@@ -266,5 +268,34 @@ Header =
 
   createNotification: (e) ->
     {type, content, lifetime, cb} = e.detail
-    notif = new Notification type, content, lifetime
+    notif = new Notice type, content, lifetime
     cb notif if cb
+
+  areNotificationsEnabled: false
+  enableDesktopNotifications: ->
+    return unless window.Notification and Conf['Desktop Notifications']
+    switch Notification.permission
+      when 'granted'
+        Header.areNotificationsEnabled = true
+        return
+      when 'denied'
+        # requestPermission doesn't work if status is 'denied',
+        # but it'll still work if status is 'default'.
+        return
+
+    el = $.el 'span',
+      innerHTML: """
+      Desktop notification permissions are not granted.
+      [<a href='https://github.com/MayhemYDG/4chan-x/wiki/FAQ#desktop-notifications' target=_blank>FAQ</a>]<br>
+      <button>Authorize</button> or <button>Disable</button>
+      """
+    [authorize, disable] = $$ 'button', el
+    $.on authorize, 'click', ->
+      Notification.requestPermission (status) ->
+        Header.areNotificationsEnabled = status is 'granted'
+        return if status is 'default'
+        notice.close()
+    $.on disable, 'click', ->
+      $.set 'Desktop Notifications', false
+      notice.close()
+    notice = new Notice 'info', el

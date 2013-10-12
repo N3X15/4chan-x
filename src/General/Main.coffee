@@ -32,18 +32,6 @@ Main =
     Conf['archives'] = Redirect.archives
     $.get Conf, (items) ->
       $.extend Conf, items
-      <% if (type === 'crx') { %>
-      unless items
-        new Notification 'error', $.el 'span',
-          innerHTML: """
-          It seems like your <%= meta.name %> settings became corrupted due to a <a href="https://code.google.com/p/chromium/issues/detail?id=261623" target=_blank>Chrome bug</a>.<br>
-          Unfortunately, you'll have to <a href="https://github.com/MayhemYDG/4chan-x/wiki/FAQ#known-problems" target=_blank>fix it yourself</a>.
-          """
-        # Track resolution of this bug.
-        Main.logError
-          message: 'Chrome Storage API bug'
-          error: new Error chrome.runtime.lastError.message or 'no lastError.message'
-      <% } %>
       Main.initFeatures()
 
     $.on d, '4chanMainInit', Main.initStyle
@@ -107,6 +95,7 @@ Main =
     initFeature 'Mark OP Quotes',           QuoteOP
     initFeature 'Mark Cross-thread Quotes', QuoteCT
     initFeature 'Anonymize',                Anonymize
+    initFeature 'Color User IDs',           IDColor
     initFeature 'Time Formatting',          Time
     initFeature 'Relative Post Dates',      RelativeDates
     initFeature 'File Info Formatting',     FileInfo
@@ -128,6 +117,7 @@ Main =
     initFeature 'Index Navigation',         Nav
     initFeature 'Keybinds',                 Keybinds
     initFeature 'Show Dice Roll',           Dice
+    initFeature 'Linkify',                  Linkify
     # c.timeEnd 'All initializations'
 
     $.on d, 'AddCallback', Main.addCallback
@@ -202,22 +192,23 @@ Main =
       Main.callbackNodes Post, posts
 
     if $.hasClass d.body, 'fourchan_x'
-      Main.v2Detected = true
+      Main.disableReports = true
       alert '4chan X v2 detected: Disable it or v3 will break.'
 
     try
       localStorage.getItem '4chan-settings'
     catch err
-      new Notification 'warning', 'Cookies need to be enabled on 4chan for <%= meta.name %> to properly function.', 30
+      new Notice 'warning', 'Cookies need to be enabled on 4chan for <%= meta.name %> to properly function.', 30
+      Main.disableReports = true
 
     $.event '4chanXInitFinished'
 
   callbackNodes: (klass, nodes) ->
     # get the nodes' length only once
     len = nodes.length
-    for callback in klass::callbacks
+    for callback in klass.callbacks
       # c.profile callback.name
-      for i in [0...len]
+      for i in [0...len] by 1
         node = nodes[i]
         try
           callback.cb.call node
@@ -242,7 +233,7 @@ Main =
       else
         return
     obj.callback.isAddon = true
-    Klass::callbacks.push obj.callback
+    Klass.callbacks.push obj.callback
 
   handleErrors: (errors) ->
     unless errors instanceof Array
@@ -250,7 +241,7 @@ Main =
     else if errors.length is 1
       error = errors[0]
     if error
-      new Notification 'error', Main.parseError(error), 15
+      new Notice 'error', Main.parseError(error), 15
       return
 
     div = $.el 'div',
@@ -266,7 +257,7 @@ Main =
     for error in errors
       $.add logs, Main.parseError error
 
-    new Notification 'error', [div, logs], 30
+    new Notice 'error', [div, logs], 30
 
   parseError: (data) ->
     Main.logError data
@@ -284,7 +275,7 @@ Main =
     Main.errors.push data
 
   postErrors: ->
-    return if Main.v2Detected
+    return if Main.disableReports
     errors = Main.errors.filter((d) -> !!d.error.stack).map((d) ->
       <% if (type === 'userscript') { %>
       # Before:
@@ -318,6 +309,13 @@ Main =
     Main.thisPageIsLegit
 
   css: """
+  @font-face {
+    font-family: 'FontAwesome';
+    src: url('data:application/font-woff;base64,<%= grunt.file.read('node_modules/font-awesome/font/fontawesome-webfont.woff', {encoding: 'base64'}) %>') format('woff');
+    font-weight: normal;
+    font-style: normal;
+  }
+  <%= grunt.file.read('node_modules/font-awesome/css/font-awesome.min.css').replace(/@font-face\{[^}]+\}/, '').replace(/\\/g, '\\\\') %>
   <%= grunt.file.read('css/style.css') %>
   <%= grunt.file.read('css/yotsuba.css') %>
   <%= grunt.file.read('css/yotsuba-b.css') %>

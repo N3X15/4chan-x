@@ -2,6 +2,7 @@ Config =
   main:
     'Miscellaneous':
       'Enable 4chan\'s Extension':    [false, 'Compatibility between <%= meta.name %> and 4chan\'s inline extension is NOT guaranteed.']
+      'Desktop Notifications':        [true,  'Enables desktop notifications across various <%= meta.name %> features.']
       'Announcement Hiding':          [true,  'Add button to hide 4chan announcements.']
       '404 Redirect':                 [true,  'Redirect dead threads and images.']
       'Keybinds':                     [true,  'Bind actions to keyboard shortcuts.']
@@ -26,6 +27,9 @@ Config =
       'Image Hover':                  [false, 'Show a floating expanded image on hover.']
       'Sauce':                        [true,  'Add sauce links to images.']
       'Reveal Spoilers':              [false, 'Reveal spoiler thumbnails.']
+    'Linkification':
+      'Linkify':                      [true,  'Convert text links into hyperlinks.']
+      'Clean Links':                  [true,  'Remove spoiler and code tags commonly used to bypass blocked links.']
     'Menu':
       'Menu':                         [true,  'Add a drop-down menu to posts.']
       'Report Link':                  [true,  'Add a report link to the menu.']
@@ -46,6 +50,7 @@ Config =
       'Thread Excerpt':               [true,  'Show an excerpt of the thread in the tab title.']
       'Thread Stats':                 [true,  'Display reply, image, and page count.']
       'Thread Watcher':               [true,  'Bookmark threads.']
+      'Color User IDs':               [true,  'Assign unique colors to user IDs on boards that use them.']
     'Posting':
       'Quick Reply':                  [true,  'All-in-one form to reply, create threads, automate dumping and more.']
       'Persistent QR':                [false, 'The Quick reply won\'t disappear after posting.']
@@ -59,7 +64,9 @@ Config =
       'Hide Original Post Form':      [true,  'Hide the normal post form.']
       'Cooldown':                     [true,  'Indicate the remaining time before posting again.']
       'Cooldown Prediction':          [true,  'Decrease the cooldown time by taking into account upload speed. Disable it if it\'s inaccurate for you.']
+      <% if (type === 'crx') { %>
       'Tab to Choose Files First':    [false, 'Tab to the file input before the submit button.']
+      <% } %>
     'Quote Links':
       'Quote Backlinks':              [true,  'Add quote backlinks.']
       'OP Backlinks':                 [true,  'Add backlinks to the OP.']
@@ -100,10 +107,7 @@ Config =
       # Set a custom class for moot:
       #/Admin$/;highlight:moot;op:yes
     """
-    email: """
-      # Filter any e-mails that are not `sage` on /a/ and /jp/:
-      #/^(?!sage$)/;boards:a,jp
-    """
+    email: ""
     subject: """
       # Filter Generals on /v/:
       #/general/i;boards:v;op:only

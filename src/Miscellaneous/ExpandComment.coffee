@@ -2,7 +2,7 @@ ExpandComment =
   init: ->
     return if g.VIEW isnt 'index' or !Conf['Comment Expansion']
 
-    Post::callbacks.push
+    Post.callbacks.push
       name: 'Comment Expansion'
       cb:   @node
   node: ->
@@ -48,11 +48,6 @@ ExpandComment =
       href = quote.getAttribute 'href'
       continue if href[0] is '/' # Cross-board quote, or board link
       quote.href = "/#{post.board}/res/#{href}" # Fix pathnames
-    Build.capcodeReplies
-      boardID: post.board.ID
-      threadID: post.thread.ID
-      bq: clone
-      capcodeReplies: postObj.capcode_replies
     post.nodes.shortComment = comment
     $.replace comment, clone
     post.nodes.comment = post.nodes.longComment = clone
@@ -72,3 +67,5 @@ ExpandComment =
       Fourchan.code.call     post
     if g.BOARD.ID is 'sci'
       Fourchan.math.call     post
+    if Conf['Linkify']
+      Linkify.node.call      post
