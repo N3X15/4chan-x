@@ -9,7 +9,6 @@ Config =
       'Time Formatting':              [true,  'Localize and format timestamps.']
       'Relative Post Dates':          [false, 'Display dates like "3 minutes ago". Tooltip shows the timestamp.']
       'File Info Formatting':         [true,  'Reformat the file information.']
-      'Comment Expansion':            [true,  'Add buttons to expand too long comments.']
       'Thread Expansion':             [true,  'Add buttons to expand threads.']
       'Index Navigation':             [false, 'Add buttons to navigate between threads.']
       'Reply Navigation':             [false, 'Add buttons to navigate to top / bottom of thread.']
@@ -148,13 +147,18 @@ Config =
     #http://dedi.nexisonline.net/filters/kspg_filters.json
   """
   'Custom CSS': false
+  Index:
+    'Index Mode': 'paged'
+    'Index Sort': 'bump'
+    'Show Replies': true
   Header:
-    'Header auto-hide':        false
-    'Bottom header':           false
-    'Header catalog links':    false
-    'Top Board List':          false
-    'Bottom Board List':       false
-    'Custom Board Navigation': true
+    'Header auto-hide':           false
+    'Header auto-hide on scroll': false
+    'Bottom header':              false
+    'Header catalog links':       false
+    'Top Board List':             false
+    'Bottom Board List':          false
+    'Custom Board Navigation':    true
   QR:
     'QR.personas': """
       #email:"sage";boards:jp;always
@@ -168,38 +172,39 @@ Config =
   usercss: ''
   hotkeys:
     # Header, QR & Options
-    'Toggle board list':  ['Ctrl+b',  'Toggle the full board list.']
-    'Open empty QR':      ['q',       'Open QR without post number inserted.']
-    'Open QR':            ['Shift+q', 'Open QR with post number inserted.']
-    'Open settings':      ['Alt+o',   'Open Settings.']
-    'Close':              ['Esc',     'Close Settings, Notifications or QR.']
-    'Spoiler tags':       ['Ctrl+s',  'Insert spoiler tags.']
-    'Code tags':          ['Alt+c',   'Insert code tags.']
-    'Eqn tags':           ['Alt+e',   'Insert eqn tags.']
-    'Math tags':          ['Alt+m',   'Insert math tags.']
-    'Submit QR':          ['Alt+s',   'Submit post.']
-    # Thread related
-    'Watch':              ['w',       'Watch thread.']
-    'Update':             ['r',       'Update the thread.']
+    'Toggle board list':  ['Ctrl+b',     'Toggle the full board list.']
+    'Open empty QR':      ['q',          'Open QR without post number inserted.']
+    'Open QR':            ['Shift+q',    'Open QR with post number inserted.']
+    'Open settings':      ['Alt+o',      'Open Settings.']
+    'Close':              ['Esc',        'Close Settings, Notifications or QR.']
+    'Spoiler tags':       ['Ctrl+s',     'Insert spoiler tags.']
+    'Code tags':          ['Alt+c',      'Insert code tags.']
+    'Eqn tags':           ['Alt+e',      'Insert eqn tags.']
+    'Math tags':          ['Alt+m',      'Insert math tags.']
+    'Submit QR':          ['Alt+s',      'Submit post.']
+    # Index/Thread related
+    'Update':             ['r',          'Refresh the index/thread.']
+    'Watch':              ['w',          'Watch thread.']
     # Images
-    'Expand image':       ['Shift+e', 'Expand selected image.']
-    'Expand images':      ['e',       'Expand all images.']
+    'Expand image':       ['Shift+e',    'Expand selected image.']
+    'Expand images':      ['e',          'Expand all images.']
     # Board Navigation
-    'Front page':         ['0',       'Jump to page 0.']
-    'Open front page':    ['Shift+0', 'Open page 0 in a new tab.']
-    'Next page':          ['Right',   'Jump to the next page.']
-    'Previous page':      ['Left',    'Jump to the previous page.']
+    'Front page':         ['0',          'Jump to page 0.']
+    'Open front page':    ['Shift+0',    'Open page 0 in a new tab.']
+    'Next page':          ['Right',      'Jump to the next page.']
+    'Previous page':      ['Left',       'Jump to the previous page.']
+    'Search form':        ['Ctrl+Alt+s', 'Focus the search field on the board index.']
     # Thread Navigation
-    'Next thread':        ['Down',    'See next thread.']
-    'Previous thread':    ['Up',      'See previous thread.']
-    'Expand thread':      ['Ctrl+e',  'Expand thread.']
-    'Open thread':        ['o',       'Open thread in current tab.']
-    'Open thread tab':    ['Shift+o', 'Open thread in new tab.']
+    'Next thread':        ['Down',       'See next thread.']
+    'Previous thread':    ['Up',         'See previous thread.']
+    'Expand thread':      ['Ctrl+e',     'Expand thread.']
+    'Open thread':        ['o',          'Open thread in current tab.']
+    'Open thread tab':    ['Shift+o',    'Open thread in new tab.']
     # Reply Navigation
-    'Next reply':         ['j',       'Select next reply.']
-    'Previous reply':     ['k',       'Select previous reply.']
-    'Deselect reply':     ['Shift+d', 'Deselect reply.']
-    'Hide':               ['x',       'Hide thread.']
+    'Next reply':         ['j',          'Select next reply.']
+    'Previous reply':     ['k',          'Select previous reply.']
+    'Deselect reply':     ['Shift+d',    'Deselect reply.']
+    'Hide':               ['x',          'Hide thread.']
   updater:
     checkbox:
       'Beep':          [false, 'Beep on new post to completely read thread.']

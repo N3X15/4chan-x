@@ -2,17 +2,16 @@ Header =
   init: ->
     headerEl = $.el 'div',
       id: 'header'
-      innerHTML: """
-      <%= grunt.file.read('html/General/Header.html').replace(/>\s+</g, '><').trim() %>
-      """
+      innerHTML: <%= importHTML('General/Header') %>
 
     @bar    = $ '#header-bar', headerEl
     @toggle = $ '#toggle-header-bar', @bar
+    @noticesRoot = $ '#notifications', headerEl
 
     @menu = new UI.Menu 'header'
     menuButton = $.el 'a',
       className: 'menu-button'
-      innerHTML: '<i class=icon-reorder></i>'
+      innerHTML: '<i class="fa fa-bars"></i>'
       href: 'javascript:;'
     $.on menuButton, 'click', @menuToggle
     @addShortcut menuButton, 0
@@ -22,6 +21,8 @@ Header =
 
     headerToggler = $.el 'label',
       innerHTML: '<input type=checkbox name="Header auto-hide"> Auto-hide header'
+    scrollHeaderToggler = $.el 'label',
+      innerHTML: '<input type=checkbox name="Header auto-hide on scroll"> Auto-hide header on scroll'
     barPositionToggler = $.el 'label',
       innerHTML: '<input type=checkbox name="Bottom header"> Bottom header'
     catalogToggler = $.el 'label',
@@ -36,30 +37,34 @@ Header =
       textContent: 'Edit custom board navigation'
       href: 'javascript:;'
 
-    @headerToggler      = headerToggler.firstElementChild
-    @barPositionToggler = barPositionToggler.firstElementChild
-    @catalogToggler     = catalogToggler.firstElementChild
-    @topBoardToggler    = topBoardToggler.firstElementChild
-    @botBoardToggler    = botBoardToggler.firstElementChild
-    @customNavToggler   = customNavToggler.firstElementChild
+    @headerToggler       = headerToggler.firstElementChild
+    @scrollHeaderToggler = scrollHeaderToggler.firstElementChild
+    @barPositionToggler  = barPositionToggler.firstElementChild
+    @catalogToggler      = catalogToggler.firstElementChild
+    @topBoardToggler     = topBoardToggler.firstElementChild
+    @botBoardToggler     = botBoardToggler.firstElementChild
+    @customNavToggler    = customNavToggler.firstElementChild
 
-    $.on @headerToggler,      'change', @toggleBarVisibility
-    $.on @barPositionToggler, 'change', @toggleBarPosition
-    $.on @catalogToggler,     'change', @toggleCatalogLinks
-    $.on @topBoardToggler,    'change', @toggleOriginalBoardList
-    $.on @botBoardToggler,    'change', @toggleOriginalBoardList
-    $.on @customNavToggler,   'change', @toggleCustomNav
-    $.on editCustomNav,       'click',  @editCustomNav
+    $.on @headerToggler,       'change', @toggleBarVisibility
+    $.on @scrollHeaderToggler, 'change', @toggleHideBarOnScroll
+    $.on @barPositionToggler,  'change', @toggleBarPosition
+    $.on @catalogToggler,      'change', @toggleCatalogLinks
+    $.on @topBoardToggler,     'change', @toggleOriginalBoardList
+    $.on @botBoardToggler,     'change', @toggleOriginalBoardList
+    $.on @customNavToggler,    'change', @toggleCustomNav
+    $.on editCustomNav,        'click',  @editCustomNav
 
-    @setBarVisibility Conf['Header auto-hide']
-    @setBarPosition   Conf['Bottom header']
-    @setTopBoardList  Conf['Top Board List']
-    @setBotBoardList  Conf['Bottom Board List']
+    @setBarVisibility   Conf['Header auto-hide']
+    @setHideBarOnScroll Conf['Header auto-hide on scroll']
+    @setBarPosition     Conf['Bottom header']
+    @setTopBoardList    Conf['Top Board List']
+    @setBotBoardList    Conf['Bottom Board List']
 
-    $.sync 'Header auto-hide',  @setBarVisibility
-    $.sync 'Bottom header',     @setBarPosition
-    $.sync 'Top Board List',    @setTopBoardList
-    $.sync 'Bottom Board List', @setBotBoardList
+    $.sync 'Header auto-hide',           @setBarVisibility
+    $.sync 'Header auto-hide on scroll', @setHideBarOnScroll
+    $.sync 'Bottom header',              @setBarPosition
+    $.sync 'Top Board List',             @setTopBoardList
+    $.sync 'Bottom Board List',          @setBotBoardList
 
     $.event 'AddMenuEntry',
       type: 'header'
@@ -67,6 +72,7 @@ Header =
       order: 105
       subEntries: [
         {el: headerToggler}
+        {el: scrollHeaderToggler}
         {el: barPositionToggler}
         {el: catalogToggler}
         {el: topBoardToggler}
@@ -179,6 +185,28 @@ Header =
       'The header bar will remain visible.'
     new Notice 'info', message, 2
 
+  setHideBarOnScroll: (hide) ->
+    Header.scrollHeaderToggler.checked = hide
+    if hide
+      $.on window, 'scroll', Header.hideBarOnScroll
+      return
+    $.off window, 'scroll', Header.hideBarOnScroll
+    $.rmClass Header.bar, 'scroll'
+    $.rmClass Header.bar, 'autohide' unless Conf['Header auto-hide']
+  toggleHideBarOnScroll: (e) ->
+    hide = @checked
+    $.set 'Header auto-hide on scroll', hide
+    Header.setHideBarOnScroll hide
+  hideBarOnScroll: ->
+    offsetY = window.pageYOffset
+    if offsetY > (Header.previousOffset or 0)
+      $.addClass Header.bar, 'autohide'
+      $.addClass Header.bar, 'scroll'
+    else
+      $.rmClass Header.bar, 'autohide'
+      $.rmClass Header.bar, 'scroll'
+    Header.previousOffset = offsetY
+
   setBarPosition: (bottom) ->
     Header.barPositionToggler.checked = bottom
     $.event 'CloseMenu'
@@ -197,12 +225,12 @@ Header =
   setCatalogLinks: (useCatalog) ->
     Header.catalogToggler.checked = useCatalog
     as = $$ [
-      '#board-list a[href*="boards.4chan.org"]'
-      '#boardNavDesktop a[href*="boards.4chan.org"]'
-      '#boardNavDesktopFoot a[href*="boards.4chan.org"]'
+      '#board-list a'
+      '#boardNavDesktop a'
+      '#boardNavDesktopFoot a'
     ].join ', '
     path = if useCatalog then 'catalog' else ''
-    for a in as when not a.dataset.only
+    for a in as when a.hostname is 'boards.4chan.org' and not a.dataset.only
       a.pathname = "/#{a.pathname.split('/')[1]}/#{path}"
     return
   toggleCatalogLinks: ->
@@ -244,32 +272,48 @@ Header =
     $('input[name=boardnav]', settings).focus()
 
   hashScroll: ->
-    return unless (hash = @location.hash[1..]) and post = $.id hash
+    hash = @location.hash[1..]
+    return unless /^p\d+$/.test(hash) and post = $.id hash
     return if (Get.postFromRoot post).isHidden
-    Header.scrollToPost post
-  scrollToPost: (post) ->
-    {top} = post.getBoundingClientRect()
+    Header.scrollTo post
+  scrollTo: (root, down, needed) ->
+    if down
+      x = Header.getBottomOf root
+      window.scrollBy 0, -x unless needed and x >= 0
+    else
+      x = Header.getTopOf root
+      window.scrollBy 0,  x unless needed and x >= 0
+  scrollToIfNeeded: (root, down) ->
+    Header.scrollTo root, down, true
+  getTopOf: (root) ->
+    {top} = root.getBoundingClientRect()
     unless Conf['Bottom header']
       headRect = Header.toggle.getBoundingClientRect()
-      top -= headRect.top + headRect.height
-    window.scrollBy 0, top
+      top     -= headRect.top + headRect.height
+    top
+  getBottomOf: (root) ->
+    {clientHeight} = doc
+    bottom = clientHeight - root.getBoundingClientRect().bottom
+    if Conf['Bottom header']
+      headRect = Header.toggle.getBoundingClientRect()
+      bottom  -= clientHeight - headRect.bottom + headRect.height
+    bottom
 
   addShortcut: (el, index) ->
     shortcut = $.el 'span',
       className: 'shortcut'
+    shortcut.dataset.index = index
     $.add shortcut, el
     shortcuts = $ '#shortcuts', Header.bar
-    nodes = [shortcuts.childNodes...]
-    nodes.splice index, 0, shortcut
-    $.add shortcuts, nodes
+    $.add shortcuts, [shortcuts.childNodes...].concat(shortcut).sort (a, b) -> a.dataset.index - b.dataset.index
 
   menuToggle: (e) ->
     Header.menu.toggle e, @, g
 
   createNotification: (e) ->
     {type, content, lifetime, cb} = e.detail
-    notif = new Notice type, content, lifetime
-    cb notif if cb
+    notice = new Notice type, content, lifetime
+    cb notice if cb
 
   areNotificationsEnabled: false
   enableDesktopNotifications: ->

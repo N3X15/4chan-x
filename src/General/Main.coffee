@@ -38,12 +38,12 @@ Main =
 
   initFeatures: ->
     switch location.hostname
-      when 'api.4chan.org'
+      when 'a.4cdn.org'
         return
       when 'sys.4chan.org'
         Report.init()
         return
-      when 'images.4chan.org'
+      when 'i.4cdn.org'
         $.ready ->
           if Conf['404 Redirect'] and d.title is '4chan - 404 Not Found'
             Redirect.init()
@@ -69,6 +69,7 @@ Main =
     initFeature 'Polyfill',                 Polyfill
     initFeature 'Header',                   Header
     initFeature 'Settings',                 Settings
+    initFeature 'Index Generator',          Index
     initFeature 'Announcement Hiding',      PSAHiding
     initFeature 'Fourchan thingies',        Fourchan
     initFeature 'Custom CSS',               CustomCSS
@@ -105,7 +106,6 @@ Main =
     initFeature 'Reveal Spoilers',          RevealSpoilers
     initFeature 'Auto-GIF',                 AutoGIF
     initFeature 'Image Hover',              ImageHover
-    initFeature 'Comment Expansion',        ExpandComment
     initFeature 'Thread Expansion',         ExpandThread
     initFeature 'Thread Excerpt',           ThreadExcerpt
     initFeature 'Favicon',                  Favicon
@@ -169,37 +169,39 @@ Main =
     # Something might have gone wrong!
     Main.initStyle()
 
-    if board = $ '.board'
-      threads = []
-      posts   = []
-
-      for threadRoot in $$ '.board > .thread', board
-        thread = new Thread +threadRoot.id[1..], g.BOARD
-        threads.push thread
-        for postRoot in $$ '.thread > .postContainer', threadRoot
-          try
-            posts.push new Post postRoot, thread, g.BOARD
-          catch err
-            # Skip posts that we failed to parse.
-            unless errors
-              errors = []
-            errors.push
-              message: "Parsing of Post No.#{postRoot.id.match(/\d+/)} failed. Post will be skipped."
-              error: err
+    if g.VIEW is 'thread' and threadRoot = $ '.thread'
+      thread = new Thread +threadRoot.id[1..], g.BOARD
+      posts  = []
+      for postRoot in $$ '.thread > .postContainer', threadRoot
+        try
+          posts.push new Post postRoot, thread, g.BOARD
+        catch err
+          # Skip posts that we failed to parse.
+          errors = [] unless errors
+          errors.push
+            message: "Parsing of Post No.#{postRoot.id.match /\d+/} failed. Post will be skipped."
+            error: err
       Main.handleErrors errors if errors
 
-      Main.callbackNodes Thread, threads
+      Main.callbackNodes Thread, [thread]
       Main.callbackNodes Post, posts
 
     if $.hasClass d.body, 'fourchan_x'
-      Main.disableReports = true
       alert '4chan X v2 detected: Disable it or v3 will break.'
+
+    <% if (type === 'userscript') { %>
+    GMver = GM_info.version.split '.'
+    for v, i in "<%= meta.min.greasemonkey %>".split '.'
+      break if v < GMver[i]
+      continue if v is GMver[i]
+      new Notice 'warning', "Your version of Greasemonkey is outdated (v#{GM_info.version} instead of v<%= meta.min.greasemonkey %> minimum) and <%= meta.name %> may not operate correctly.", 30
+      break
+    <% } %>
 
     try
       localStorage.getItem '4chan-settings'
     catch err
-      new Notice 'warning', 'Cookies need to be enabled on 4chan for <%= meta.name %> to properly function.', 30
-      Main.disableReports = true
+      new Notice 'warning', 'Cookies need to be enabled on 4chan for <%= meta.name %> to operate properly.', 30
 
     $.event '4chanXInitFinished'
 
@@ -260,45 +262,12 @@ Main =
     new Notice 'error', [div, logs], 30
 
   parseError: (data) ->
-    Main.logError data
+    c.error data.message, data.error.stack
     message = $.el 'div',
       textContent: data.message
     error = $.el 'div',
       textContent: data.error
     [message, error]
-
-  errors: []
-  logError: (data) ->
-    unless Main.errors.length
-      $.on window, 'unload', Main.postErrors
-    c.error data.message, data.error.stack
-    Main.errors.push data
-
-  postErrors: ->
-    return if Main.disableReports
-    errors = Main.errors.filter((d) -> !!d.error.stack).map((d) ->
-      <% if (type === 'userscript') { %>
-      # Before:
-      # someFn@file:///C:/Users/<USER>/AppData/Roaming/Mozilla/Firefox/Profiles/<garbage>.default/gm_scripts/4chan_X/4chan-X.user.js:line_number
-      # someFn@file:///home/<USER>/.mozilla/firefox/<garbage>.default/gm_scripts/4chan_X/4chan-X.user.js:line_number
-      # After:
-      # someFn@4chan-X.user.js:line_number
-      {name, message, stack} = d.error
-      stack = stack.replace /file:\/{3}.+\//g, ''
-      "#{d.message} #{name}: #{message} #{stack}"
-      <% } else { %>
-      "#{d.message} #{d.error.stack}"
-      <% } %>
-    ).join '\n'
-    return unless errors
-    $.ajax '<%= meta.page %>errors', null,
-      sync: true
-      form: $.formData
-        n: "<%= meta.name %> v#{g.VERSION}"
-        t: '<%= type %>'
-        ua:  window.navigator.userAgent
-        url: window.location.href
-        e: errors
 
   isThisPageLegit: ->
     # 404 error page or similar.
@@ -311,7 +280,7 @@ Main =
   css: """
   @font-face {
     font-family: 'FontAwesome';
-    src: url('data:application/font-woff;base64,<%= grunt.file.read('node_modules/font-awesome/font/fontawesome-webfont.woff', {encoding: 'base64'}) %>') format('woff');
+    src: url('data:application/font-woff;base64,<%= grunt.file.read('node_modules/font-awesome/fonts/fontawesome-webfont.woff', {encoding: 'base64'}) %>') format('woff');
     font-weight: normal;
     font-style: normal;
   }

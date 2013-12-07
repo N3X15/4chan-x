@@ -19,14 +19,14 @@ QR =
     return unless QR.postingIsEnabled
 
     sc = $.el 'a',
-      className: 'qr-shortcut icon-comment-alt'
+      className: 'qr-shortcut fa fa-comment-o'
       title: 'Quick Reply'
       href: 'javascript:;'
     $.on sc, 'click', ->
       $.event 'CloseMenu'
       QR.open()
       QR.nodes.com.focus()
-    Header.addShortcut sc, 1
+    Header.addShortcut sc, 2
 
     $.on d, 'QRGetSelectedPost', ({detail: cb}) ->
       cb QR.selected
@@ -39,11 +39,15 @@ QR =
     $.on d, 'dragover',           QR.dragOver
     $.on d, 'drop',               QR.dropFile
     $.on d, 'dragstart dragend',  QR.drag
-    $.on d, 'ThreadUpdate', ->
-      if g.DEAD
-        QR.abort()
-      else
-        QR.status()
+    switch g.VIEW
+      when 'index'
+        $.on d, 'IndexRefresh', QR.generatePostableThreadsList
+      when 'thread'
+        $.on d, 'ThreadUpdate', ->
+          if g.DEAD
+            QR.abort()
+          else
+            QR.status()
 
     QR.persist() if Conf['Persistent QR']
 
@@ -230,7 +234,6 @@ QR =
       setTimers = (e) => QR.cooldown.types = e.detail
       $.on  window, 'cooldown:timers', setTimers
       $.globalEval 'window.dispatchEvent(new CustomEvent("cooldown:timers", {detail: cooldowns}))'
-      QR.cooldown.types or= {} # XXX tmp workaround until all pages and the catalogs get the cooldowns var.
       $.off window, 'cooldown:timers', setTimers
       for type of QR.cooldown.types
         QR.cooldown.types[type] = +QR.cooldown.types[type]
@@ -259,11 +262,11 @@ QR =
       if delay
         cooldown = {delay}
       else
-        if hasFile = !!post.file
+        if post.file
           upSpd = post.file.size / ((start - req.uploadStartTime) / $.SECOND)
           QR.cooldown.upSpdAccuracy = ((upSpd > QR.cooldown.upSpd * .9) + QR.cooldown.upSpdAccuracy) / 2
           QR.cooldown.upSpd = upSpd
-        cooldown = {isReply, hasFile, threadID}
+        cooldown = {isReply, threadID}
       QR.cooldown.cooldowns[start] = cooldown
       $.set "cooldown.#{g.BOARD}", QR.cooldown.cooldowns
       QR.cooldown.start()
@@ -300,26 +303,17 @@ QR =
             QR.cooldown.unset start
           continue
 
-        if 'timeout' of cooldown
-          # XXX tmp conversion from previous cooldowns
-          QR.cooldown.unset start
-          continue
-
         if isReply is cooldown.isReply
           # Only cooldowns relevant to this post can set the seconds variable:
           #   reply cooldown with a reply, thread cooldown with a thread
           elapsed = Math.floor (now - start) / $.SECOND
           continue if elapsed < 0 # clock changed since then?
-          unless isReply
-            type = 'thread'
+          type = unless isReply
+            'thread'
           else if hasFile
-            # You can post an image reply immediately after a non-image reply.
-            unless cooldown.hasFile
-              seconds = Math.max seconds, 0
-              continue
-            type = 'image'
+            'image'
           else
-            type = 'reply'
+            'reply'
           maxTimer = Math.max types[type] or 0, types[type + '_intra'] or 0
           unless start <= now <= start + maxTimer * $.SECOND
             QR.cooldown.unset start
@@ -440,7 +434,7 @@ QR =
         className: 'qr-preview'
         draggable: true
         href: 'javascript:;'
-        innerHTML: '<a class=remove>×</a><label hidden><input type=checkbox> Spoiler</label><span></span>'
+        innerHTML: '<a class="remove fa fa-times-circle" title=Remove></a><label hidden><input type=checkbox> Spoiler</label><span></span>'
 
       @nodes =
         el:      el
@@ -603,7 +597,7 @@ QR =
         # Resized pictures through canvases look like ass,
         # so we generate thumbnails `s` times bigger then expected
         # to avoid crappy resized quality.
-        s = 90*2
+        s = 90 * 2 * window.devicePixelRatio
         s *= 3 if @file.type is 'image/gif' # let them animate
         {height, width} = img
         if height < s or width < s
@@ -697,7 +691,7 @@ QR =
 
       imgContainer = $.el 'div',
         className: 'captcha-img'
-        title: 'Reload'
+        title: 'Reload reCAPTCHA'
         innerHTML: '<img>'
       input = $.el 'input',
         className: 'captcha-input field'
@@ -796,10 +790,27 @@ QR =
         return
       e.preventDefault()
 
+  generatePostableThreadsList: ->
+    return unless QR.nodes
+    list    = QR.nodes.thread
+    options = [list.firstChild]
+    for thread of g.BOARD.threads
+      options.push $.el 'option',
+        value: thread
+        textContent: "Thread No.#{thread}"
+    val = list.value
+    $.rmAll list
+    $.add list, options
+    list.value = val
+    return unless list.value
+    # Fix the value if the option disappeared.
+    list.value = if g.VIEW is 'thread'
+      g.THREADID
+    else
+      'new'
+
   dialog: ->
-    dialog = UI.dialog 'qr', 'top:0;right:0;', """
-    <%= grunt.file.read('html/Posting/QR.html').replace(/>\s+</g, '><').trim() %>
-    """
+    dialog = UI.dialog 'qr', 'top:0;right:0;', <%= importHTML('Posting/QR') %>
 
     QR.nodes = nodes =
       el:         dialog
@@ -867,12 +878,6 @@ QR =
       nodes.flag.dataset.default = '0'
       $.add nodes.form, nodes.flag
 
-    # Make a list of threads.
-    for thread of g.BOARD.threads
-      $.add nodes.thread, $.el 'option',
-        value: thread
-        textContent: "Thread No.#{thread}"
-
     <% if (type === 'userscript') { %>
     # XXX Firefox lacks focusin/focusout support.
     for elm in $$ '*', QR.nodes.el
@@ -906,6 +911,7 @@ QR =
         $.set 'QR Size', @style.cssText
     <% } %>
 
+    QR.generatePostableThreadsList()
     QR.persona.init()
     new QR.post true
     QR.status()

@@ -49,7 +49,7 @@ class Post
 
     @parseComment()
     @parseQuotes()
-    @parseFile(that)
+    @parseFile that
 
     @clones = []
     g.posts[@fullID] = thread.posts[@] = board.posts[@] = @
@@ -109,15 +109,13 @@ class Post
     return unless (fileEl = $ '.file', @nodes.post) and thumb = $ 'img[data-md5]', fileEl
     # Supports JPG/PNG/GIF/PDF.
     # Flash files are not supported.
-    alt      = thumb.alt
     anchor   = thumb.parentNode
-    fileInfo = fileEl.firstElementChild
+    fileText = fileEl.firstElementChild
     @file    =
-      info:  fileInfo
-      text:  fileInfo.firstElementChild
+      text:  fileText
       thumb: thumb
       URL:   anchor.href
-      size:  alt.match(/[\d.]+\s\w+/)[0]
+      size:  thumb.alt.match(/[\d.]+\s\w+/)[0]
       MD5:   thumb.dataset.md5
       isSpoiler: $.hasClass anchor, 'imgspoiler'
     size  = +@file.size.match(/[\d.]+/)[0]
@@ -127,8 +125,11 @@ class Post
     @file.thumbURL = if that.isArchived
       thumb.src
     else
-      "#{location.protocol}//thumbs.4chan.org/#{@board}/thumb/#{@file.URL.match(/(\d+)\./)[1]}s.jpg"
-    @file.name = $('span[title]', fileInfo).title
+      "#{location.protocol}//t.4cdn.org/#{@board}/thumb/#{@file.URL.match(/(\d+)\./)[1]}s.jpg"
+    @file.name = if nameNode = $ 'span', fileText
+      nameNode.title or nameNode.textContent
+    else
+      fileText.title
     <% if (type === 'crx') { %>
     # replace %22 with quotes, see:
     # crbug.com/81193
@@ -138,7 +139,7 @@ class Post
     @file.name = @file.name.replace /%22/g, '"'
     <% } %>
     if @file.isImage = /(jpg|png|gif)$/i.test @file.name
-      @file.dimensions = @file.text.textContent.match(/\d+x\d+/)[0]
+      @file.dimensions = fileText.textContent.match(/\d+x\d+/)[0]
 
   kill: (file, now) ->
     now or= new Date()
@@ -193,6 +194,13 @@ class Post
         quotelink.textContent = quotelink.textContent.replace '\u00A0(Dead)', ''
         $.rmClass quotelink, 'deadlink'
     return
+
+  collect: ->
+    @kill()
+    delete g.posts[@fullID]
+    delete @thread.posts[@]
+    delete @board.posts[@]
+
   addClone: (context) ->
     new Clone @, context
   rmClone: (index) ->

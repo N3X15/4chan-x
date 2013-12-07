@@ -1,9 +1,7 @@
 ThreadStats =
   init: ->
     return if g.VIEW isnt 'thread' or !Conf['Thread Stats']
-    @dialog = UI.dialog 'thread-stats', 'bottom: 0; left: 0;', """
-    <%= grunt.file.read('html/Monitoring/ThreadStats.html').replace(/>\s+</g, '><').trim() %>
-    """
+    @dialog = UI.dialog 'thread-stats', 'bottom: 0; left: 0;', <%= importHTML('Monitoring/ThreadStats') %>
 
     @postCountEl  = $ '#post-count', @dialog
     @fileCountEl  = $ '#file-count', @dialog
@@ -39,7 +37,7 @@ ThreadStats =
       $.addClass ThreadStats.pageCountEl, 'warning'
       return
     setTimeout ThreadStats.fetchPage, 2 * $.MINUTE
-    $.ajax "//api.4chan.org/#{ThreadStats.thread.board}/threads.json", onload: ThreadStats.onThreadsLoad,
+    $.ajax "//a.4cdn.org/#{ThreadStats.thread.board}/threads.json", onload: ThreadStats.onThreadsLoad,
       whenModified: true
   onThreadsLoad: ->
     return if @status isnt 200
