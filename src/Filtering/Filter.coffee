@@ -157,6 +157,8 @@ Filter =
 
         # Highlight
         $.addClass @nodes.root, result.class
+        unless @highlights and result.class in @highlights
+          (@highlights or= []).push result.class
         if !@isReply and result.top
           @thread.isOnTop = true
 
@@ -211,7 +213,7 @@ Filter =
 
   menu:
     init: ->
-      return if g.VIEW is 'catalog' or !Conf['Menu'] or !Conf['Filter']
+      return if !Conf['Menu'] or !Conf['Filter']
 
       div = $.el 'div',
         textContent: 'Filter'

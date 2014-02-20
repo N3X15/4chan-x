@@ -5,8 +5,8 @@
   "http": true,
   "https": true,
   "software": "foolfuuka",
-  "boards": ["a", "co", "gd", "jp", "m", "sp", "tg", "tv", "v", "vg", "vp", "vr", "wsg"],
-  "files": ["a", "gd", "jp", "m", "tg", "vg", "vp", "vr", "wsg"]
+  "boards": ["a", "biz", "co", "gd", "jp", "m", "sp", "tg", "tv", "v", "vg", "vp", "vr", "wsg"],
+  "files": ["a", "biz", "gd", "jp", "m", "tg", "vg", "vp", "vr", "wsg"]
 }, {
   "uid": 1,
   "name": "NSFW Foolz",
@@ -32,8 +32,8 @@
   "http": true,
   "https": true,
   "software": "foolfuuka",
-  "boards": ["hr", "pol", "s4s", "tg", "tv", "x"],
-  "files": ["hr", "pol", "s4s", "tg", "tv", "x"]
+  "boards": ["adv", "hr", "o", "pol", "s4s", "tg", "tv", "x"],
+  "files": ["adv", "hr", "o", "pol", "s4s", "tg", "tv", "x"]
 }, {
   "uid": 4,
   "name": "Nyafuu",
@@ -41,8 +41,17 @@
   "http": true,
   "https": true,
   "software": "foolfuuka",
-  "boards": ["c", "w", "wg"],
-  "files": ["c", "w", "wg"]
+  "boards": ["c", "e", "w", "wg"],
+  "files": ["c", "e", "w", "wg"]
+}, {
+  "uid": 5,
+  "name": "Love is Over",
+  "domain": "loveisover.me",
+  "http": true,
+  "https": true,
+  "software": "foolfuuka",
+  "boards": ["d", "i"],
+  "files": ["d", "i"]
 }, {
   "uid": 7,
   "name": "Install Gentoo",
@@ -55,7 +64,7 @@
 }, {
   "uid": 8,
   "name": "Rebecca Black Tech",
-  "domain": "rbt.asia",
+  "domain": "archive.rebeccablacktech.com",
   "http": true,
   "https": true,
   "software": "fuuka",
@@ -74,11 +83,38 @@
   "uid": 10,
   "name": "warosu",
   "domain": "fuuka.warosu.org",
-  "http": true,
+  "http": false,
   "https": true,
   "software": "fuuka",
-  "boards": ["3", "cgl", "ck", "fa", "ic", "jp", "lit", "tg", "vr"],
-  "files": ["3", "cgl", "ck", "fa", "ic", "jp", "lit", "tg", "vr"]
+  "boards": ["3", "biz", "cgl", "ck", "fa", "ic", "jp", "lit", "tg", "vr"],
+  "files": ["3", "biz", "cgl", "ck", "fa", "ic", "jp", "lit", "tg", "vr"]
+}, {
+  "uid": 15,
+  "name": "fgts",
+  "domain": "fgts.eu",
+  "http": true,
+  "https": true,
+  "software": "foolfuuka",
+  "boards": ["r", "soc"],
+  "files": ["r", "soc"]
+}, {
+  "uid": 16,
+  "name": "maware",
+  "domain": "archive.mawa.re",
+  "http": true,
+  "https": false,
+  "software": "foolfuuka",
+  "boards": ["t"],
+  "files": ["t"]
+}, {
+  "uid": 17,
+  "name": "installgentoo.com",
+  "domain": "chan.installgentoo.com",
+  "http": true,
+  "https": false,
+  "software": "foolfuuka",
+  "boards": ["g", "t"],
+  "files": ["g", "t"]
 }, {
   "uid": 13,
   "name": "Foolz Beta",
@@ -87,15 +123,6 @@
   "https": true,
   "withCredentials": true,
   "software": "foolfuuka",
-  "boards": ["a", "co", "gd", "jp", "m", "s4s", "sp", "tg", "tv", "u", "v", "vg", "vp", "vr", "wsg"],
-  "files": ["a", "gd", "jp", "m", "s4s", "tg", "u", "vg", "vp", "vr", "wsg"]
-}, {
-  "uid": 14,
-  "name": "Bui's Archive",
-  "domain": "archive.bui.pm",
-  "http": true,
-  "https": true,
-  "software": "foolfuuka",
-  "boards": ["b"],
-  "files": ["b"]
+  "boards": ["a", "biz", "co", "d", "gd", "jp", "m", "mlp", "s4s", "sp", "tg", "tv", "u", "v", "vg", "vp", "vr", "wsg"],
+  "files": ["a", "biz", "d", "gd", "jp", "m", "s4s", "tg", "u", "vg", "vp", "vr", "wsg"]
 }]

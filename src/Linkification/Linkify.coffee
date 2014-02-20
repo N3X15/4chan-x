@@ -1,6 +1,6 @@
 Linkify =
   init: ->
-    return if g.VIEW is 'catalog' or !Conf['Linkify']
+    return if !Conf['Linkify']
 
     # gruber revised + magnet support
     # http://df4.us/fv9
@@ -60,11 +60,12 @@ Linkify =
           # Replace already-linkified links,
           # f.e.: https://boards.4chan.org/b/%
           $.replace parent, anchor
-        Linkify.cleanLink anchor, link if Conf['Clean Links']
+        Linkify.cleanLink anchor, link
         walker.currentNode = anchor.lastChild
       else
         walker.previousNode()
     range.detach()
+    @nodes.comment.normalize()
 
   find: (link, walker) ->
     # Walk through the nodes until we find the entire link.
@@ -105,10 +106,6 @@ Linkify =
       range.surroundContents anchor
       true
     catch
-      <% if (type === 'crx') { %>
-      # Chrome bug: crbug.com/275848
-      return true if anchor.parentNode
-      <% } %>
       # Attempt to handle cases such as:
       # [spoiler]www.[/spoiler]example.com #
       # www.example[spoiler].com[/spoiler] #
@@ -138,6 +135,8 @@ Linkify =
 
   cleanLink: (anchor, link) ->
     {length} = link
+    for node in $$ 'wbr', anchor
+      $.rm node
     for node in $$ 's, .prettyprint', anchor
       $.replace node, [node.childNodes...] if length > node.textContent.length
     return

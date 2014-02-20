@@ -47,6 +47,8 @@ $.ajax = do ->
     if whenModified
       r.setRequestHeader 'If-Modified-Since', lastModified[url] if url of lastModified
       $.on r, 'load', -> lastModified[url] = r.getResponseHeader 'Last-Modified'
+    if /\.json$/.test url
+      r.responseType = 'json'
     $.extend r, options
     $.extend r.upload, upCallbacks
     r.send form
@@ -91,23 +93,17 @@ $.addStyle = (css) ->
 $.x = (path, root=d.body) ->
   # XPathResult.ANY_UNORDERED_NODE_TYPE === 8
   d.evaluate(path, root, null, 8, null).singleNodeValue
-$.addClass = (el, className) ->
-  el.classList.add className
-$.rmClass = (el, className) ->
-  el.classList.remove className
+$.addClass = (el, className...) ->
+  el.classList.add className...
+$.rmClass = (el, className...) ->
+  el.classList.remove className...
 $.hasClass = (el, className) ->
   el.classList.contains className
-$.rm = do ->
-  if 'remove' of Element.prototype
-    (el) -> el.remove()
-  else
-    (el) -> el.parentNode?.removeChild el
+$.rm = (el) ->
+  el.remove()
 $.rmAll = (root) ->
-  # jsperf.com/emptify-element
-  for node in [root.childNodes...]
-    # HTMLSelectElement.remove !== Element.remove
-    root.removeChild node
-  return
+  # https://gist.github.com/MayhemYDG/8646194
+  root.textContent = null
 $.tn = (s) ->
   d.createTextNode s
 $.nodes = (nodes) ->
@@ -232,60 +228,91 @@ $.localKeys = [
   'usercss'
 ]
 # https://developer.chrome.com/extensions/storage.html
-$.delete = (keys) ->
-  chrome.storage.sync.remove keys
-$.get = (key, val, cb) ->
-  if typeof cb is 'function'
-    items = $.item key, val
-  else
-    items = key
-    cb = val
+do ->
+  items =
+    local: {}
+    sync:  {}
 
-  localItems = null
-  syncItems  = null
-  for key, val of items
-    if key in $.localKeys
-      (localItems or= {})[key] = val
+  $.delete = (keys) ->
+    if typeof keys is 'string'
+      keys = [keys]
+    for key in keys
+      delete items.local[key]
+      delete items.sync[key]
+    chrome.storage.sync.remove keys
+
+  $.get = (key, val, cb) ->
+    if typeof cb is 'function'
+      data = $.item key, val
     else
-      (syncItems  or= {})[key] = val
+      data = key
+      cb = val
 
-  count = 0
-  done  = (item) ->
-    {lastError} = chrome.runtime
-    if lastError
-      c.error lastError, lastError.message or 'No message.'
-    $.extend items, item
-    cb items unless --count
+    localItems = null
+    syncItems  = null
+    for key, val of data
+      if key in $.localKeys
+        (localItems or= {})[key] = val
+      else
+        (syncItems  or= {})[key] = val
 
-  if localItems
-    count++
-    chrome.storage.local.get localItems, done
-  if syncItems
-    count++
-    chrome.storage.sync.get  syncItems,  done
-$.set = do ->
-  items = {}
-  localItems = {}
+    count = 0
+    done  = (result) ->
+      if chrome.runtime.lastError
+        c.error chrome.runtime.lastError.message
+      $.extend data, result
+      cb data unless --count
 
-  set = $.debounce $.SECOND, ->
-    for key in $.localKeys
-      if key of items
-        (localItems or= {})[key] = items[key]
-        delete items[key]
-    try
-      chrome.storage.local.set localItems
-      chrome.storage.sync.set items
-      items = {}
-      localItems = {}
-    catch err
-      c.error err.stack
+    if localItems
+      count++
+      chrome.storage.local.get localItems, done
+    if syncItems
+      count++
+      chrome.storage.sync.get  syncItems,  done
 
-  (key, val) ->
+  timeout = {}
+  setArea = (area) ->
+    data = items[area]
+    return if !Object.keys(data).length or timeout[area] > Date.now()
+    chrome.storage[area].set data, ->
+      if chrome.runtime.lastError
+        c.error chrome.runtime.lastError.message
+        for key, val of data when key not of items[area]
+          if area is 'sync' and chrome.storage.sync.QUOTA_BYTES_PER_ITEM < JSON.stringify(val).length + key.length
+            c.error chrome.runtime.lastError.message, key, val
+            continue
+          items[area][key] = val
+        setTimeout setArea, $.MINUTE, area
+        timeout[area] = Date.now() + $.MINUTE
+        return
+      delete timeout[area]
+    items[area] = {}
+
+  setSync = $.debounce $.SECOND, ->
+    setArea 'sync'
+
+  $.set = (key, val) ->
     if typeof key is 'string'
-      items[key] = val
+      items.sync[key] = val
     else
-      $.extend items, key
-    set()
+      $.extend items.sync, key
+    for key in $.localKeys when key of items.sync
+      items.local[key] = items.sync[key]
+      delete items.sync[key]
+    setArea 'local'
+    setSync()
+
+  $.clear = (cb) ->
+    items.local = {}
+    items.sync  = {}
+    count = 2
+    done  = ->
+      if chrome.runtime.lastError
+        c.error chrome.runtime.lastError.message
+        return
+      cb?() unless --count
+    chrome.storage.local.clear done
+    chrome.storage.sync.clear  done
 <% } else { %>
 # http://wiki.greasespot.net/Main_Page
 $.sync = do ->
@@ -327,4 +354,7 @@ $.set = do ->
     for key, val of keys
       set key, val
     return
+$.clear = (cb) ->
+  $.delete GM_listValues().map (key) -> key.replace g.NAMESPACE, ''
+  cb?()
 <% } %>
