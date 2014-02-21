@@ -249,11 +249,9 @@ Settings =
       data.Conf['watchedThreads'] = boards: ThreadWatcher.convert data.Conf['WatchedThreads']
       delete data.Conf['WatchedThreads']
     $.set data.Conf
-  convertSettings: (data, map) ->
-    for prevKey, newKey of map
-      data.Conf[newKey] = data.Conf[prevKey] if newKey
-      delete data.Conf[prevKey]
-    data
+  reset: ->
+    if confirm 'Your current settings will be entirely wiped, are you sure?'
+      $.clear -> window.location.reload() if confirm 'Reset successful. Reload now?'
 
   filter: (section) ->
     section.innerHTML = <%= importHTML('General/Settings-section-Filter') %>
